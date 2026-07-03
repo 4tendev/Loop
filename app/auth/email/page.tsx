@@ -69,6 +69,7 @@ export default function EmailAuth() {
     try {
       const response = await fetch("/api/auth/email", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },
@@ -99,6 +100,7 @@ export default function EmailAuth() {
     try {
       const response = await fetch("/api/auth/email", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },

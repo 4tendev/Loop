@@ -11,6 +11,7 @@ import type { ApiUser, User } from "@/types/user";
 export const dynamic = "force-dynamic";
 
 const sessionCookieName = "SSID";
+const sessionCookieMaxAgeSeconds = 60 * 60 * 24 * 365;
 
 type EmailLoginRequestBody = {
   email?: unknown;
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
 
       response.cookies.set(sessionCookieName, session.ssid, {
         httpOnly: true,
+        maxAge: sessionCookieMaxAgeSeconds,
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
         path: "/",
