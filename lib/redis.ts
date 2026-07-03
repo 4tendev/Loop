@@ -1,6 +1,6 @@
 import { createClient, type RedisClientType } from "redis";
 
-type RedisClient = RedisClientType<{}, {}, {}, 3, {}>;
+type RedisClient = RedisClientType<{}, {}, {}, 2, {}>;
 
 declare global {
   var loopRedisClient: RedisClient | undefined;
@@ -15,6 +15,7 @@ export async function getRedisClient() {
   if (!globalThis.loopRedisClient) {
     const client = createClient({
       url: process.env.REDIS_URL,
+      RESP: 2,
     });
 
     client.on("error", (error) => {
