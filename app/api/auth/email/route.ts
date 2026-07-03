@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
       return badRequest(error.message);
     }
 
+    console.error("Failed to send email login code", error);
+
     return NextResponse.json(
       {
         code: 500,
