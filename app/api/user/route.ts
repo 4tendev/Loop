@@ -1,69 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getRedisClient } from "@/lib/redis";
-import type { ApiUser } from "@/types/user";
+import { NextRequest } from "next/server";
+import { apiResponse, unauthorized } from "@/lib/api-response";
+import { getUserSessionFromRequest } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
-const sessionCookieName = "SSID";
-
-function getSessionKey(ssid: string) {
-  return `user:ssid:${ssid}`;
-}
-
-function isApiUser(value: unknown): value is ApiUser {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const user = value as Partial<Record<keyof ApiUser, unknown>>;
-
-  return (
-    typeof user.id === "string" &&
-    typeof user.name === "string" &&
-    (user.type === "member" || user.type === "admin") &&
-    typeof user.createdAt === "string" &&
-    typeof user.updatedAt === "string"
-  );
-}
-
 function unknownUser() {
-  return NextResponse.json(
-    {
-      code: 401,
-      message: "unknown user",
-      data: null,
-    },
-    { status: 401 },
-  );
+  return unauthorized("unknown user");
 }
 
 export async function GET(request: NextRequest) {
-  const ssid = request.cookies.get(sessionCookieName)?.value;
+  const session = await getUserSessionFromRequest(request);
 
-  if (!ssid) {
+  if (!session) {
     return unknownUser();
   }
 
-  const redis = await getRedisClient();
-  const savedUser = await redis.get(getSessionKey(ssid));
-
-  if (!savedUser) {
-    return unknownUser();
-  }
-
-  try {
-    const user = JSON.parse(savedUser);
-
-    if (!isApiUser(user)) {
-      return unknownUser();
-    }
-
-    return NextResponse.json({
-      code: 200,
-      message: "user found",
-      data: user,
-    });
-  } catch {
-    return unknownUser();
-  }
+  return apiResponse(200, "user found", session.user);
 }
