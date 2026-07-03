@@ -1,6 +1,7 @@
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import { emailAuthProvider, createEmailProviderUserId } from "@/lib/auth/email";
 import { getRedisClient } from "@/lib/redis";
+import { sendEmail } from "./send-email";
 
 export const emailCodeLength = 5;
 export const emailCodeTtlMs = 5 * 60 * 1000;
@@ -20,16 +21,24 @@ export type EmailLoginCodeTimeLeft = {
   timeLeftMs: number;
 };
 
-export function createEmailLoginCode(
+export async function createEmailLoginCode(
   email: string,
-): EmailLoginCode {
-  return {
+): Promise<EmailLoginCode> {
+  const loginCode: EmailLoginCode = {
     provider: emailAuthProvider,
     providerUserId: createEmailProviderUserId(email),
     code: randomInt(0, 10 ** emailCodeLength)
       .toString()
       .padStart(emailCodeLength, "0"),
   };
+
+  await sendEmail({
+    to: loginCode.providerUserId,
+    subject: "Your authentication code",
+    text: `Your authentication code is ${loginCode.code}. It expires in 5 minutes.`,
+  });
+
+  return loginCode;
 }
 
 export function hashEmailLoginCode(code: string) {
@@ -87,7 +96,7 @@ export async function getOrCreateEmailLoginCode(
     return { timeLeftMs };
   }
 
-  const loginCode = createEmailLoginCode(email);
+  const loginCode = await createEmailLoginCode(email);
   await saveEmailLoginCode(loginCode);
 
   return {
