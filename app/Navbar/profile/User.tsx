@@ -1,40 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useUser } from "@/app/providers/UserProvider";
 import UserAuthLink from "./AuthLink";
 import Profile from "./Profile";
 
-type UserStatus = "checking" | "known" | "unknown";
-
 export default function User() {
-  const [status, setStatus] = useState<UserStatus>("checking");
+  const { isCheckingUser, user } = useUser();
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function checkUser() {
-      try {
-        const response = await fetch("/api/user", {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-
-        setStatus(response.ok ? "known" : "unknown");
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        setStatus("unknown");
-      }
-    }
-
-    checkUser();
-
-    return () => controller.abort();
-  }, []);
-
-  if (status === "checking") {
+  if (isCheckingUser) {
     return (
       <div className="btn btn-ghost btn-circle">
         <span className="loading loading-spinner loading-md text-info" />
@@ -42,5 +15,5 @@ export default function User() {
     );
   }
 
-  return status === "known" ? <Profile /> : <UserAuthLink />;
+  return user ? <Profile user={user} /> : <UserAuthLink />;
 }

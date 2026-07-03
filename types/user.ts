@@ -14,6 +14,11 @@ export type User = {
   updatedAt: Date;
 };
 
+export type ApiUser = Omit<User, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type UserAuthMethod = {
   id: string;
   userId: User["id"];
@@ -29,7 +34,6 @@ export type CreateUserInput = {
 };
 
 export type CreateUserAuthMethodInput = {
-  userId: User["id"];
   provider: AuthProvider;
   providerUserId: string;
 };

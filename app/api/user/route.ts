@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedisClient } from "@/lib/redis";
-import type { User } from "@/types/user";
+import type { ApiUser } from "@/types/user";
 
 export const dynamic = "force-dynamic";
 
 const sessionCookieName = "SSID";
-
-type ApiUser = Omit<User, "createdAt" | "updatedAt"> & {
-  createdAt: string;
-  updatedAt: string;
-};
 
 function getSessionKey(ssid: string) {
   return `user:ssid:${ssid}`;

@@ -1,6 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { useUser } from "@/app/providers/UserProvider";
+import type { ApiUser } from "@/types/user";
 
 const codeLength = 5;
 
@@ -12,6 +15,12 @@ type EmailCodeResponse = {
   } | null;
 };
 
+type EmailLoginResponse = {
+  code: number;
+  message: string;
+  data: ApiUser | null;
+};
+
 function formatTimeLeft(timeLeftMs: number) {
   const totalSeconds = Math.max(Math.ceil(timeLeftMs / 1000), 0);
   const minutes = Math.floor(totalSeconds / 60);
@@ -21,6 +30,8 @@ function formatTimeLeft(timeLeftMs: number) {
 }
 
 export default function EmailAuth() {
+  const router = useRouter();
+  const { setUser } = useUser();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState(() => Array(codeLength).fill(""));
   const [timeLeftMs, setTimeLeftMs] = useState<number | null>(null);
@@ -29,6 +40,8 @@ export default function EmailAuth() {
   const codeInputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const hasRequestedCode = timeLeftMs !== null;
+  const loginCode = code.join("");
+  const isCodeComplete = loginCode.length === codeLength && !code.includes("");
 
   useEffect(() => {
     if (timeLeftMs === null || timeLeftMs <= 0) {
@@ -73,6 +86,36 @@ export default function EmailAuth() {
       window.setTimeout(() => codeInputRefs.current[0]?.focus(), 0);
     } catch {
       setError("Could not send the login code. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function verifyLoginCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, code: loginCode }),
+      });
+      const result = (await response.json()) as EmailLoginResponse;
+
+      if (!response.ok || !result.data) {
+        setError(result.message || "Could not sign you in.");
+        return;
+      }
+
+      setUser(result.data);
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Could not sign you in. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -153,11 +196,22 @@ export default function EmailAuth() {
                   ) : null}
                   Send code
                 </button>
-              ) : null}
+              ) : (
+                <button
+                  className="btn btn-ghost w-full"
+                  disabled={isSubmitting || (timeLeftMs ?? 0) > 0}
+                  type="submit"
+                >
+                  {isSubmitting ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : null}
+                  Send new code
+                </button>
+              )}
             </form>
 
             {hasRequestedCode ? (
-              <div className="space-y-4">
+              <form className="space-y-4" onSubmit={verifyLoginCode}>
                 <div className="flex justify-between gap-3 text-sm text-base-content/70">
                   <span>One-time code</span>
                   <span>{formatTimeLeft(timeLeftMs)} left</span>
@@ -168,6 +222,7 @@ export default function EmailAuth() {
                     <input
                       aria-label={`Code digit ${index + 1}`}
                       className="input input-bordered h-14 w-full text-center text-xl font-semibold"
+                      disabled={isSubmitting}
                       inputMode="numeric"
                       key={index}
                       maxLength={codeLength}
@@ -181,7 +236,18 @@ export default function EmailAuth() {
                     />
                   ))}
                 </div>
-              </div>
+
+                <button
+                  className="btn btn-primary w-full"
+                  disabled={isSubmitting || !isCodeComplete}
+                  type="submit"
+                >
+                  {isSubmitting ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : null}
+                  Sign in
+                </button>
+              </form>
             ) : null}
 
             {error ? <p className="text-sm text-error">{error}</p> : null}
