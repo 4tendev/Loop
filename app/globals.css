@@ -3,3 +3,17 @@
 @plugin "daisyui" {
   themes: all;
 }
+
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/Vazirmatn.ttf") format("truetype");
+  font-display: swap;
+}
+
+html {
+  font-family: "Vazirmatn", Arial, sans-serif;
+}
+
+body {
+  font-family: inherit;
+}

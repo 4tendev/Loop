@@ -2,11 +2,10 @@ export default function Home() {
   return (
     <main className="page">
       <section className="intro">
-        <p className="eyebrow">Next.js app</p>
-        <h1>Loop</h1>
+        <p className="eyebrow">برنامه Next.js</p>
+        <h1>لوپ</h1>
         <p className="summary">
-          Your project is ready. Start shaping the product from this first
-          screen.
+          پروژه شما آماده است. از همین صفحه می‌توانید ساخت محصول را شروع کنید.
         </p>
       </section>
     </main>

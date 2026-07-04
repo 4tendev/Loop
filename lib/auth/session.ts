@@ -18,6 +18,7 @@ export function getSessionKey(ssid: string) {
 export function toApiUser(user: User): ApiUser {
   return {
     ...user,
+    profileImage: user.profileImage || "/avatar.png",
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };
@@ -52,6 +53,25 @@ export async function createUserSession(user: User): Promise<UserSession> {
 
   return {
     ssid,
+    user: apiUser,
+  };
+}
+
+export async function updateUserSession(
+  session: Pick<UserSession, "ssid">,
+  user: User,
+): Promise<UserSession> {
+  const apiUser = toApiUser(user);
+  const redis = await getRedisClient();
+
+  await redis.setEx(
+    getSessionKey(session.ssid),
+    sessionCookieMaxAgeSeconds,
+    JSON.stringify(apiUser),
+  );
+
+  return {
+    ssid: session.ssid,
     user: apiUser,
   };
 }

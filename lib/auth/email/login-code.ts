@@ -34,8 +34,8 @@ export async function createEmailLoginCode(
 
   await sendEmail({
     to: loginCode.providerUserId,
-    subject: "Your authentication code",
-    text: `Your authentication code is ${loginCode.code}. It expires in 5 minutes.`,
+    subject: "کد ورود شما",
+    text: `کد ورود شما ${loginCode.code} است. این کد تا ۵ دقیقه اعتبار دارد.`,
   });
 
   return loginCode;

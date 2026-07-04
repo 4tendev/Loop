@@ -8,6 +8,7 @@ export type AuthProvider = (typeof authProviders)[number];
 
 export type User = {
   id: string;
+  profileImage: string;
   name: string;
   type: UserType;
   createdAt: Date;
@@ -30,6 +31,7 @@ export type UserAuthMethod = {
 
 export type CreateUserInput = {
   name: string;
+  profileImage?: string;
   type?: UserType;
 };
 

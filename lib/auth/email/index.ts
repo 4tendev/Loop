@@ -33,6 +33,7 @@ export function getOrCreateEmailAuthMethodInput(
 
 type UserRow = {
   id: string;
+  profileImage: string;
   name: string;
   type: User["type"];
   createdAt: Date;
@@ -56,12 +57,13 @@ async function getUserByEmailProviderUserId(
 ) {
   const result = await client.query<UserRow>(
     `
-      SELECT
-        users.id,
-        users.name,
-        users.type,
-        users.created_at AS "createdAt",
-        users.updated_at AS "updatedAt"
+        SELECT
+          users.id,
+          users.profile_image AS "profileImage",
+          users.name,
+          users.type,
+          users.created_at AS "createdAt",
+          users.updated_at AS "updatedAt"
       FROM user_auth_methods
       INNER JOIN users ON users.id = user_auth_methods.user_id
       WHERE user_auth_methods.provider = $1
@@ -107,16 +109,17 @@ export async function getOrCreateUser(email: string): Promise<User> {
 
     const userResult = await client.query<UserRow>(
       `
-        INSERT INTO users (name)
-        VALUES ($1)
+        INSERT INTO users (name, profile_image)
+        VALUES ($1, $2)
         RETURNING
           id,
+          profile_image AS "profileImage",
           name,
           type,
           created_at AS "createdAt",
           updated_at AS "updatedAt"
       `,
-      [providerUserId],
+      [providerUserId, "/avatar.png"],
     );
     const user = userResult.rows[0];
 

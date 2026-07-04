@@ -25,30 +25,30 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return badRequest("Invalid JSON body");
+    return badRequest("بدنه درخواست نامعتبر است");
   }
 
   if (typeof body.email !== "string" || !body.email.trim()) {
-    return badRequest("Email is required");
+    return badRequest("ایمیل الزامی است");
   }
 
   if (body.code !== undefined) {
     if (typeof body.code !== "string" || !body.code.trim()) {
-      return badRequest("Code is required");
+      return badRequest("کد الزامی است");
     }
 
     try {
       const verified = await verifySavedEmailLoginCode(body.email, body.code);
 
       if (!verified) {
-        return unauthorized("Invalid or expired email authentication code");
+        return unauthorized("کد ورود نامعتبر است یا منقضی شده");
       }
 
       const user = await getOrCreateUser(body.email);
       const session = await createUserSession(user);
       const response = apiResponse(
         200,
-        "email authentication verified",
+        "ورود با ایمیل تایید شد",
         session.user,
       );
 
@@ -57,26 +57,26 @@ export async function POST(request: NextRequest) {
       return response;
     } catch (error) {
       if (error instanceof Error && error.message === "Invalid email address") {
-        return badRequest(error.message);
+        return badRequest("آدرس ایمیل نامعتبر است");
       }
 
       console.error("Failed to verify email authentication code", error);
 
-      return serverError("Failed to verify email authentication code");
+      return serverError("تایید کد ورود انجام نشد");
     }
   }
 
   try {
     const data = await getOrCreateEmailLoginCode(body.email);
 
-    return apiResponse(200, "email authentication code sent", data);
+    return apiResponse(200, "کد ورود ایمیل ارسال شد", data);
   } catch (error) {
     if (error instanceof Error && error.message === "Invalid email address") {
-      return badRequest(error.message);
+      return badRequest("آدرس ایمیل نامعتبر است");
     }
 
     console.error("Failed to send email authentication code", error);
 
-    return serverError("Failed to send email authentication code");
+    return serverError("ارسال کد ورود انجام نشد");
   }
 }

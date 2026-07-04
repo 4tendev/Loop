@@ -1,17 +1,22 @@
 import Image from "next/image";
+import type { ApiUser } from "@/types/user";
 
-export default function ProfileDefaultImage() {
+export default function ProfileDefaultImage({
+  profileImage,
+}: {
+  profileImage: ApiUser["profileImage"];
+}) {
   return (
     <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
       <div className="w-10 rounded-full">
         <Image
-          alt="Profile"
+          alt="profile image"
           role="button"
           tabIndex={0}
           width={48}
           height={48}
           className="rounded-full btn btn-outline p-0 border border-info"
-          src={"/avatar.png"}
+          src={profileImage}
         />
       </div>
     </div>

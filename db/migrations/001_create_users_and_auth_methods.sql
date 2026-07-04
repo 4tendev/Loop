@@ -11,6 +11,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL CHECK (length(trim(name)) > 0),
+  profile_image text NOT NULL DEFAULT '/avatar.png' CHECK (length(trim(profile_image)) > 0),
   type text NOT NULL DEFAULT 'member' CHECK (type IN ('member', 'admin')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

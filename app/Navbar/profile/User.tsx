@@ -1,8 +1,8 @@
 "use client";
 
 import { useUser } from "@/app/providers/UserProvider";
-import UserAuthLink from "./AuthLink";
 import Profile from "./Profile";
+import UserAuthLink from "./AuthLink";
 
 export default function User() {
   const { isCheckingUser, user } = useUser();

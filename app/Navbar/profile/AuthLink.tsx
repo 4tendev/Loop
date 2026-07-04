@@ -4,7 +4,7 @@ import ProfileDefaultImage from "./ProfileDefaultImage";
 export default function UserAuthLink() {
   return (
     <Link href={"/auth"}>
-      <ProfileDefaultImage />
+      <ProfileDefaultImage profileImage="/avatar.png" />
     </Link>
   );
 }

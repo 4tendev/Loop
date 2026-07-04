@@ -78,7 +78,7 @@ export default function EmailAuth() {
       const result = (await response.json()) as EmailCodeResponse;
 
       if (!response.ok || !result.data) {
-        setError(result.message || "Could not send the authentication code.");
+        setError(result.message || "ارسال کد ورود انجام نشد.");
         return;
       }
 
@@ -86,7 +86,7 @@ export default function EmailAuth() {
       setCode(Array(codeLength).fill(""));
       window.setTimeout(() => codeInputRefs.current[0]?.focus(), 0);
     } catch {
-      setError("Could not send the authentication code. Please try again.");
+      setError("ارسال کد ورود انجام نشد. دوباره تلاش کنید.");
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +109,7 @@ export default function EmailAuth() {
       const result = (await response.json()) as EmailLoginResponse;
 
       if (!response.ok || !result.data) {
-        setError(result.message || "Could not authenticate you.");
+        setError(result.message || "ورود انجام نشد.");
         return;
       }
 
@@ -117,7 +117,7 @@ export default function EmailAuth() {
       router.push("/user");
       router.refresh();
     } catch {
-      setError("Could not authenticate you. Please try again.");
+      setError("ورود انجام نشد. دوباره تلاش کنید.");
     } finally {
       setIsSubmitting(false);
     }
@@ -166,20 +166,25 @@ export default function EmailAuth() {
           <div className="card-body gap-6">
             <div className="space-y-2">
               <h1 className="text-2xl font-semibold">
-                Authenticate with email
+                ورود با ایمیل
               </h1>
               <p className="text-sm text-base-content/70">
                 {hasRequestedCode
-                  ? `Enter the code sent to ${email}.`
-                  : "We will send a one-time authentication code to your inbox."}
+                  ? (
+                      <>
+                        کد ارسال‌شده به <bdi>{email}</bdi> را وارد کنید.
+                      </>
+                    )
+                  : "یک کد یک‌بارمصرف به ایمیل شما ارسال می‌کنیم."}
               </p>
             </div>
 
             <form className="flex flex-col gap-5" onSubmit={requestLoginCode}>
               <label className="flex w-full flex-col gap-2">
-                <span className="label-text">Email</span>
+                <span className="label-text">ایمیل</span>
                 <input
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full text-left"
+                  dir="ltr"
                   disabled={isSubmitting || hasRequestedCode}
                   inputMode="email"
                   onChange={(event) => setEmail(event.target.value)}
@@ -198,7 +203,7 @@ export default function EmailAuth() {
                   {isSubmitting ? (
                     <span className="loading loading-spinner loading-sm" />
                   ) : null}
-                  Send code
+                  ارسال کد
                 </button>
               ) : (
                 <button
@@ -209,7 +214,7 @@ export default function EmailAuth() {
                   {isSubmitting ? (
                     <span className="loading loading-spinner loading-sm" />
                   ) : null}
-                  Send new code
+                  ارسال کد جدید
                 </button>
               )}
             </form>
@@ -217,14 +222,14 @@ export default function EmailAuth() {
             {hasRequestedCode ? (
               <form className="flex flex-col gap-5" onSubmit={verifyLoginCode}>
                 <div className="flex justify-between gap-3 text-sm text-base-content/70">
-                  <span>One-time code</span>
-                  <span>{formatTimeLeft(timeLeftMs)} left</span>
+                  <span>کد یک‌بارمصرف</span>
+                  <span>{formatTimeLeft(timeLeftMs)} باقی مانده</span>
                 </div>
 
                 <div className="grid grid-cols-5 gap-2">
                   {code.map((digit, index) => (
                     <input
-                      aria-label={`Code digit ${index + 1}`}
+                      aria-label={`رقم ${index + 1} کد`}
                       className="input input-bordered h-14 w-full text-center text-xl font-semibold"
                       disabled={isSubmitting}
                       inputMode="numeric"
@@ -249,7 +254,7 @@ export default function EmailAuth() {
                   {isSubmitting ? (
                     <span className="loading loading-spinner loading-sm" />
                   ) : null}
-                  Authenticate
+                  ورود
                 </button>
               </form>
             ) : null}

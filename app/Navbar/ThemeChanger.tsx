@@ -1,8 +1,57 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+const LIGHT_THEME = "cupcake";
+const DARK_THEME = "synthwave";
+const THEME_STORAGE_KEY = "loop-theme";
+
+type Theme = typeof LIGHT_THEME | typeof DARK_THEME;
+
+function getPreferredTheme(): Theme {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+
+  if (savedTheme === LIGHT_THEME || savedTheme === DARK_THEME) {
+    return savedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? DARK_THEME
+    : LIGHT_THEME;
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
 export default function ThemeChanger() {
+  const [theme, setTheme] = useState<Theme>(LIGHT_THEME);
+
+  useEffect(() => {
+    const preferredTheme = getPreferredTheme();
+
+    setTheme(preferredTheme);
+    applyTheme(preferredTheme);
+  }, []);
+
+  function changeTheme(isDarkTheme: boolean) {
+    const nextTheme = isDarkTheme ? DARK_THEME : LIGHT_THEME;
+
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  }
+
   return (
     <label className="swap swap-rotate m-3">
       {/* this hidden checkbox controls the state */}
-      <input type="checkbox" className="theme-controller" value="synthwave" />
+      <input
+        type="checkbox"
+        className="theme-controller"
+        value={DARK_THEME}
+        checked={theme === DARK_THEME}
+        onChange={(event) => changeTheme(event.target.checked)}
+      />
 
       {/* sun icon */}
       <svg
