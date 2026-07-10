@@ -52,3 +52,9 @@ COPY --from=web-builder /app/next.config.ts ./next.config.ts
 EXPOSE 3000
 
 CMD ["sh", "-c", "node scripts/migrate.mjs && npm run start"]
+
+FROM nginx:1.27-alpine AS nginx
+
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

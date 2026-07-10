@@ -1,4 +1,16 @@
 services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - web
+      - server
+
   web:
     build:
       context: .
@@ -9,8 +21,8 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://loop:loop@postgres:5432/loop
       REDIS_URL: redis://redis:6379
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,8 +41,8 @@ services:
       AVALON_WS_PORT: 3001
       DATABASE_URL: postgresql://loop:loop@postgres:5432/loop
       REDIS_URL: redis://redis:6379
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     depends_on:
       postgres:
         condition: service_healthy

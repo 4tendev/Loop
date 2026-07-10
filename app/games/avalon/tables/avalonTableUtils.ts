@@ -31,10 +31,11 @@ export function getAvalonWsUrl(tableId?: string) {
   }
 
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const isDevelopment = process.env.NODE_ENV === "development";
   const isLocalHost =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
-  const host = isLocalHost
+  const host = isDevelopment && isLocalHost
     ? `${window.location.hostname}:3001`
     : window.location.host;
 
