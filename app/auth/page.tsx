@@ -4,7 +4,10 @@ import {
   getUserSessionBySsid,
   sessionCookieName,
 } from "@/lib/auth/session";
-import { getTelegramBotUsername } from "@/lib/auth/telegram";
+import {
+  getTelegramAuthOrigin,
+  getTelegramBotUsername,
+} from "@/lib/auth/telegram";
 import AuthClient from "./AuthClient";
 
 export default async function Auth() {
@@ -16,5 +19,10 @@ export default async function Auth() {
     redirect("/user");
   }
 
-  return <AuthClient telegramBotUsername={getTelegramBotUsername()} />;
+  return (
+    <AuthClient
+      telegramAuthOrigin={getTelegramAuthOrigin()}
+      telegramBotUsername={getTelegramBotUsername()}
+    />
+  );
 }

@@ -43,6 +43,10 @@ export function getTelegramBotUsername() {
   );
 }
 
+export function getTelegramAuthOrigin() {
+  return process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "") ?? "";
+}
+
 function getTelegramBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN?.trim() ?? "";
 }

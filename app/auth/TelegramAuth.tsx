@@ -3,10 +3,14 @@
 import { useEffect, useRef } from "react";
 
 type TelegramAuthProps = {
+  authOrigin: string;
   botUsername: string;
 };
 
-export default function TelegramAuth({ botUsername }: TelegramAuthProps) {
+export default function TelegramAuth({
+  authOrigin,
+  botUsername,
+}: TelegramAuthProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export default function TelegramAuth({ botUsername }: TelegramAuthProps) {
     script.setAttribute("data-radius", "8");
     script.setAttribute(
       "data-auth-url",
-      `${window.location.origin}/api/auth/telegram`,
+      `${authOrigin || window.location.origin}/api/auth/telegram`,
     );
     script.setAttribute("data-request-access", "write");
 
@@ -35,7 +39,7 @@ export default function TelegramAuth({ botUsername }: TelegramAuthProps) {
     return () => {
       container.innerHTML = "";
     };
-  }, [botUsername]);
+  }, [authOrigin, botUsername]);
 
   if (!botUsername) {
     return (

@@ -8,10 +8,14 @@ import TelegramAuth from "./TelegramAuth";
 type AuthMethod = "email" | "telegram";
 
 type AuthClientProps = {
+  telegramAuthOrigin: string;
   telegramBotUsername: string;
 };
 
-export default function AuthClient({ telegramBotUsername }: AuthClientProps) {
+export default function AuthClient({
+  telegramAuthOrigin,
+  telegramBotUsername,
+}: AuthClientProps) {
   const searchParams = useSearchParams();
   const telegramError = searchParams.get("telegramError");
   const [method, setMethod] = useState<AuthMethod>(
@@ -50,7 +54,10 @@ export default function AuthClient({ telegramBotUsername }: AuthClientProps) {
             {method === "email" ? (
               <EmailAuth embedded />
             ) : (
-              <TelegramAuth botUsername={telegramBotUsername} />
+              <TelegramAuth
+                authOrigin={telegramAuthOrigin}
+                botUsername={telegramBotUsername}
+              />
             )}
 
             {telegramError ? (
