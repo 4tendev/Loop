@@ -5,34 +5,12 @@ declare global {
 }
 
 function getPostgresConfig() {
-  if (process.env.DATABASE_URL) {
-    return {
-      connectionString: process.env.DATABASE_URL,
-      max: 10,
-    };
-  }
-
-  const requiredEnvKeys = [
-    "PGDATABASE",
-    "PGHOST",
-    "PGPASSWORD",
-    "PGPORT",
-    "PGUSER",
-  ] as const;
-  const missingEnvKeys = requiredEnvKeys.filter((key) => !process.env[key]);
-
-  if (missingEnvKeys.length > 0) {
-    throw new Error(
-      `Postgres connection is missing: ${missingEnvKeys.join(", ")}`,
-    );
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is not set");
   }
 
   return {
-    database: process.env.PGDATABASE,
-    host: process.env.PGHOST,
-    password: process.env.PGPASSWORD,
-    port: Number(process.env.PGPORT),
-    user: process.env.PGUSER,
+    connectionString: process.env.DATABASE_URL,
     max: 10,
   };
 }
