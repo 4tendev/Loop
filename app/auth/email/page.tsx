@@ -82,7 +82,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
       const result = (await response.json()) as EmailCodeResponse;
 
       if (!response.ok || !result.data) {
-        setError(result.message || "Could not send the login code.");
+        setError(result.message || "امکان ارسال کد ورود وجود ندارد.");
         return;
       }
 
@@ -90,7 +90,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
       setCode(Array(codeLength).fill(""));
       window.setTimeout(() => codeInputRefs.current[0]?.focus(), 0);
     } catch {
-      setError("Could not send the login code. Please try again.");
+      setError("امکان ارسال کد ورود وجود ندارد. دوباره تلاش کنید.");
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +113,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
       const result = (await response.json()) as EmailLoginResponse;
 
       if (!response.ok || !result.data) {
-        setError(result.message || "Could not sign you in.");
+        setError(result.message || "امکان ورود وجود ندارد.");
         return;
       }
 
@@ -121,7 +121,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
       router.push("/user");
       router.refresh();
     } catch {
-      setError("Could not sign you in. Please try again.");
+      setError("امکان ورود وجود ندارد. دوباره تلاش کنید.");
     } finally {
       setIsSubmitting(false);
     }
@@ -166,21 +166,21 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
   const content = (
     <>
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Email sign in</h2>
+        <h2 className="text-xl font-semibold">ورود با ایمیل</h2>
         <p className="text-sm text-base-content/70">
           {hasRequestedCode ? (
             <>
-              Enter the code sent to <bdi>{email}</bdi>.
+              کد ارسال‌شده به <bdi>{email}</bdi> را وارد کنید.
             </>
           ) : (
-            "We will send a one-time code to your email."
+            "یک کد یک‌بارمصرف به ایمیل شما ارسال می‌کنیم."
           )}
         </p>
       </div>
 
       <form className="flex flex-col gap-5" onSubmit={requestLoginCode}>
         <label className="flex w-full flex-col gap-2">
-          <span className="label-text">Email</span>
+          <span className="label-text">ایمیل</span>
           <input
             className="input input-bordered w-full text-left"
             dir="ltr"
@@ -202,7 +202,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
             {isSubmitting ? (
               <span className="loading loading-spinner loading-sm" />
             ) : null}
-            Send code
+            ارسال کد
           </button>
         ) : (
           <button
@@ -213,7 +213,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
             {isSubmitting ? (
               <span className="loading loading-spinner loading-sm" />
             ) : null}
-            Send new code
+            ارسال کد جدید
           </button>
         )}
       </form>
@@ -221,14 +221,14 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
       {hasRequestedCode ? (
         <form className="flex flex-col gap-5" onSubmit={verifyLoginCode}>
           <div className="flex justify-between gap-3 text-sm text-base-content/70">
-            <span>One-time code</span>
-            <span>{formatTimeLeft(timeLeftMs)} left</span>
+            <span>کد یک‌بارمصرف</span>
+            <span>{formatTimeLeft(timeLeftMs)} باقی مانده</span>
           </div>
 
           <div dir="ltr" className="grid grid-cols-5 gap-2">
             {code.map((digit, index) => (
               <input
-                aria-label={`Code digit ${index + 1}`}
+                aria-label={`رقم ${index + 1} کد`}
                 className="input input-bordered h-14 w-full text-center text-xl font-semibold"
                 disabled={isSubmitting}
                 inputMode="numeric"
@@ -253,7 +253,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
             {isSubmitting ? (
               <span className="loading loading-spinner loading-sm" />
             ) : null}
-            Sign in
+            ورود
           </button>
         </form>
       ) : null}
@@ -267,7 +267,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
   }
 
   return (
-    <main className="min-h-full bg-base-200 px-4 py-10">
+    <main className="min-h-full bg-base-200 px-4 py-10" dir="rtl" lang="fa">
       <section className="mx-auto flex min-h-full w-full max-w-md items-center">
         <div className="card w-full bg-base-100 shadow-xl">
           <div className="card-body gap-6">{content}</div>

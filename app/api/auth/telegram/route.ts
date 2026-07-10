@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   const payload = getPayloadFromRequest(request);
 
   if (!payload) {
-    return badRequest("Invalid Telegram login payload");
+    return badRequest("داده‌های ورود تلگرام نامعتبر است");
   }
 
   try {
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (!verified) {
       return redirectWithError(
         request,
-        "Telegram login is invalid or expired",
+        "ورود با تلگرام نامعتبر است یا منقضی شده",
       );
     }
 
@@ -74,11 +74,11 @@ export async function GET(request: NextRequest) {
       (error.message === "Invalid Telegram user id" ||
         error.message === "TELEGRAM_BOT_TOKEN is not set")
     ) {
-      return redirectWithError(request, error.message);
+      return redirectWithError(request, "ورود با تلگرام پیکربندی نشده است");
     }
 
     console.error("Failed to authenticate with Telegram", error);
 
-    return redirectWithError(request, "Telegram login failed");
+    return redirectWithError(request, "ورود با تلگرام انجام نشد");
   }
 }

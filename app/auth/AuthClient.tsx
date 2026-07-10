@@ -23,14 +23,14 @@ export default function AuthClient({
   );
 
   return (
-    <main className="min-h-full bg-base-200 px-4 py-10">
+    <main className="min-h-full bg-base-200 px-4 py-10" dir="rtl" lang="fa">
       <section className="mx-auto flex min-h-full w-full max-w-md items-center">
         <div className="card w-full bg-base-100 shadow-xl">
           <div className="card-body gap-6">
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold">Sign in</h1>
+              <h1 className="text-2xl font-semibold">ورود</h1>
               <p className="text-sm text-base-content/70">
-                Choose how you want to authenticate.
+                روش ورود به حساب خود را انتخاب کنید.
               </p>
             </div>
 
@@ -40,14 +40,14 @@ export default function AuthClient({
                 onClick={() => setMethod("email")}
                 type="button"
               >
-                Email
+                ایمیل
               </button>
               <button
                 className={`btn join-item ${method === "telegram" ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setMethod("telegram")}
                 type="button"
               >
-                Telegram
+                تلگرام
               </button>
             </div>
 

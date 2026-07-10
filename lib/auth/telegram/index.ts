@@ -43,8 +43,28 @@ export function getTelegramBotUsername() {
   );
 }
 
+function normalizeTelegramAuthOrigin(origin: string) {
+  const trimmed = origin.trim().replace(/\/+$/, "");
+
+  if (!trimmed) {
+    return "";
+  }
+
+  const protocol =
+    /^(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(trimmed) ? "http" : "https";
+  const urlCandidate = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `${protocol}://${trimmed}`;
+
+  try {
+    return new URL(urlCandidate).origin;
+  } catch {
+    return "";
+  }
+}
+
 export function getTelegramAuthOrigin() {
-  return process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "") ?? "";
+  return normalizeTelegramAuthOrigin(process.env.NEXT_PUBLIC_APP_URL ?? "");
 }
 
 function getTelegramBotToken() {

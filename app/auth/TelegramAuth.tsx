@@ -7,6 +7,13 @@ type TelegramAuthProps = {
   botUsername: string;
 };
 
+function getTelegramAuthUrl(authOrigin: string) {
+  const trimmedOrigin = authOrigin.trim().replace(/\/+$/, "");
+  const origin = trimmedOrigin || window.location.origin;
+
+  return new URL("/api/auth/telegram", origin).toString();
+}
+
 export default function TelegramAuth({
   authOrigin,
   botUsername,
@@ -28,10 +35,7 @@ export default function TelegramAuth({
     script.setAttribute("data-telegram-login", botUsername);
     script.setAttribute("data-size", "large");
     script.setAttribute("data-radius", "8");
-    script.setAttribute(
-      "data-auth-url",
-      `${authOrigin || window.location.origin}/api/auth/telegram`,
-    );
+    script.setAttribute("data-auth-url", getTelegramAuthUrl(authOrigin));
     script.setAttribute("data-request-access", "write");
 
     container.appendChild(script);
@@ -44,7 +48,7 @@ export default function TelegramAuth({
   if (!botUsername) {
     return (
       <div className="alert alert-warning text-sm">
-        Telegram login is not configured yet.
+        ورود با تلگرام هنوز پیکربندی نشده است.
       </div>
     );
   }
@@ -53,7 +57,7 @@ export default function TelegramAuth({
     <div className="flex flex-col gap-4">
       <div ref={containerRef} className="flex min-h-12 justify-center" />
       <p className="text-center text-sm text-base-content/70">
-        Continue in Telegram, then you will return to your account.
+        در تلگرام ادامه دهید؛ سپس به حساب خود بازمی‌گردید.
       </p>
     </div>
   );
