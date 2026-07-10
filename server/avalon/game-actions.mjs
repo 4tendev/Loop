@@ -16,6 +16,14 @@ const AVALON_VISIBLE_EVIL_MATE_ROLES = new Set([
   "morgana",
   "mordred",
 ]);
+const AVALON_DECISION_RESULT_LABELS = {
+  approved: "تأیید شد",
+  disapproved: "رد شد",
+};
+const AVALON_MISSION_RESULT_LABELS = {
+  succeeded: "موفق",
+  failed: "ناموفق",
+};
 const AVALON_MISSION_RULES_BY_PLAYER_COUNT = {
   5: [
     { players: 2, minimumFailures: 1 },
@@ -236,15 +244,15 @@ export async function createAvalonAssassinationPhase(client, gameId) {
   await createAvalonPublicMessage(
     client,
     gameId,
-    "Waiting for assassination to end.",
+    "منتظر پایان ترور هستیم.",
   );
   await client.query(
     `
       UPDATE avalon_seats
       SET
         private_message = CASE
-          WHEN id = $2 THEN 'You are the assassin. Choose Merlin.'
-          ELSE 'Waiting for assassination to end.'
+          WHEN id = $2 THEN 'شما قاتل هستید. مرلین را انتخاب کنید.'
+          ELSE 'منتظر پایان ترور هستیم.'
         END,
         action_required_type = CASE
           WHEN id = $2 THEN 'avalon.assassinAction'
@@ -442,7 +450,7 @@ async function createAvalonMissionPhase(client, questId) {
   await createAvalonPublicMessage(
     client,
     quest.gameId,
-    "Waiting for mission voting result.",
+    "منتظر نتیجه رأی ماموریت هستیم.",
   );
 
   return {
@@ -464,7 +472,7 @@ async function createAvalonMissionVotes(client, seats, missionId) {
     `
       UPDATE avalon_seats
       SET
-        private_message = 'Please vote for mission.',
+        private_message = 'لطفاً برای ماموریت رأی بدهید.',
         action_required_type = 'avalon.missionVote',
         action_required_id = $1
       WHERE id = ANY($2::uuid[])
@@ -475,7 +483,7 @@ async function createAvalonMissionVotes(client, seats, missionId) {
 
 async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
   function skipLadyOfTheLakePhase(message) {
-    console.log(`Lady of the Lake phase not created: ${message}`);
+    console.log(`مرحله بانوی دریاچه ایجاد نشد: ${message}`);
 
     return {
       ok: false,
@@ -512,18 +520,18 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
   const game = gameResult.rows[0];
 
   if (!game) {
-    return skipLadyOfTheLakePhase("Avalon game is not in progress");
+    return skipLadyOfTheLakePhase("بازی آوالون در جریان نیست");
   }
 
   if (!game.useLadyOfTheLake) {
     return skipLadyOfTheLakePhase(
-      "Lady of the Lake is not enabled for this game",
+      "بانوی دریاچه برای این بازی فعال نیست",
     );
   }
 
   if (game.missionPhaseCount < 2) {
     return skipLadyOfTheLakePhase(
-      "Lady of the Lake can only be created after 2 missions",
+      "بانوی دریاچه فقط بعد از ۲ ماموریت می‌تواند ایجاد شود",
     );
   }
 
@@ -580,7 +588,7 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
   const ladySeat = ladySeatResult.rows[0];
 
   if (!ladySeat) {
-    return skipLadyOfTheLakePhase("Expected Lady of the Lake seat");
+    return skipLadyOfTheLakePhase("صندلی بانوی دریاچه پیدا نشد");
   }
 
   const placeholderTargetResult = await client.query(
@@ -599,7 +607,7 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
   const placeholderTargetSeat = placeholderTargetResult.rows[0];
 
   if (!placeholderTargetSeat) {
-    return skipLadyOfTheLakePhase("Expected Lady of the Lake target seat");
+    return skipLadyOfTheLakePhase("صندلی هدف بانوی دریاچه پیدا نشد");
   }
 
   const phase = await createAvalonPhase(client, gameId);
@@ -619,20 +627,20 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
   const ladyCheck = ladyCheckResult.rows[0];
 
   if (!ladyCheck) {
-    return skipLadyOfTheLakePhase("Lady of the Lake phase was not created");
+    return skipLadyOfTheLakePhase("مرحله بانوی دریاچه ایجاد نشد");
   }
 
   await createAvalonPublicMessage(
     client,
     gameId,
-    "Waiting for Lady of the Lake to check a target.",
+    "منتظر انتخاب هدف توسط بانوی دریاچه هستیم.",
   );
   await client.query(
     `
       UPDATE avalon_seats
       SET
         private_message = CASE
-          WHEN id = $2 THEN 'You are Lady of the Lake. Choose your target.'
+          WHEN id = $2 THEN 'شما بانوی دریاچه هستید. هدف خود را انتخاب کنید.'
           ELSE NULL
         END,
         action_required_type = CASE
@@ -650,7 +658,7 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
 
   return {
     ok: true,
-    message: "Lady of the Lake phase created",
+    message: "مرحله بانوی دریاچه ایجاد شد",
     gameId,
     ladyCheckId: ladyCheck.id,
     ladySeatId: ladySeat.id,
@@ -662,7 +670,7 @@ export async function createAvalonLadyOfTheLakePhase(gameId) {
   if (typeof gameId !== "string" || gameId.length === 0) {
     return {
       ok: false,
-      message: "Invalid game",
+      message: "شناسه بازی نامعتبر است",
     };
   }
 
@@ -996,7 +1004,7 @@ async function openAvalonQuestDecisionForNominatedTeam(
   await createAvalonPublicMessage(
     client,
     gameId,
-    `Nominated team: ${formatAvalonSeatList(nominatedSeatRows)}.`,
+    `تیم پیشنهادی: ${formatAvalonSeatList(nominatedSeatRows)}.`,
   );
 
   await client.query(
@@ -1013,7 +1021,7 @@ async function openAvalonQuestDecisionForNominatedTeam(
     `
       UPDATE avalon_seats
       SET
-        private_message = 'Vote to approve or disapprove the nominated team.',
+        private_message = 'برای تأیید یا رد تیم پیشنهادی رأی بدهید.',
         action_required_type = 'avalon.questDecision',
         action_required_id = $2
       WHERE
@@ -1134,7 +1142,7 @@ async function createQuestPhase(client, gameId) {
   await createAvalonPublicMessage(
     client,
     gameId,
-    `The king is now selected: seat ${kingSeat.number}.`,
+    `پادشاه انتخاب شد: صندلی ${kingSeat.number}.`,
   );
   await client.query(
     `
@@ -1162,7 +1170,7 @@ async function createQuestPhase(client, gameId) {
     [
       kingSeat.id,
       quest.id,
-      `You are the king. Nominate ${missionRule.players} teammates for mission .`,
+      `شما پادشاه هستید. ${missionRule.players} نفر را برای ماموریت انتخاب کنید.`,
     ],
   );
 
@@ -1633,7 +1641,7 @@ export async function decideAvalonQuest(gameId, questId, decision, userId) {
         await createAvalonPublicMessage(
           client,
           gameId,
-          `Decisions closed with final result of ${finalResult}. Approve: ${decisionSummary.approveCount}, disapprove: ${decisionSummary.disapproveCount}.`,
+          `تصمیم‌گیری بسته شد. نتیجه نهایی: ${AVALON_DECISION_RESULT_LABELS[finalResult]}. تأیید: ${decisionSummary.approveCount}، رد: ${decisionSummary.disapproveCount}.`,
         );
       }
     }
@@ -1678,14 +1686,14 @@ export async function chooseAvalonLadyTarget(
   ) {
     return {
       ok: false,
-      message: "Invalid game, Lady check, or target",
+      message: "شناسه بازی، بررسی بانوی دریاچه یا هدف نامعتبر است",
     };
   }
 
   if (!userId) {
     return {
       ok: false,
-      message: "You must be signed in to choose Lady of the Lake target",
+      message: "برای انتخاب هدف بانوی دریاچه باید وارد حساب شوید",
     };
   }
 
@@ -1748,7 +1756,7 @@ export async function chooseAvalonLadyTarget(
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "Only the Lady of the Lake can choose a valid target",
+        message: "فقط بانوی دریاچه می‌تواند هدف معتبر انتخاب کند",
       };
     }
 
@@ -1757,7 +1765,7 @@ export async function chooseAvalonLadyTarget(
       return {
         ok: false,
         message:
-          "This player has already been Lady of the Lake. Choose another target.",
+          "این بازیکن قبلاً بانوی دریاچه بوده است. هدف دیگری انتخاب کنید.",
       };
     }
 
@@ -1802,7 +1810,7 @@ export async function chooseAvalonLadyTarget(
 
     return {
       ok: true,
-      message: "Lady of the Lake target selected",
+      message: "هدف بانوی دریاچه انتخاب شد",
       gameId,
       ladyCheckId,
       seatId: ladyCheck.ladySeatId,
@@ -1833,14 +1841,14 @@ export async function chooseAvalonAssassinationTarget(
   ) {
     return {
       ok: false,
-      message: "Invalid game, assassination, or target",
+      message: "شناسه بازی، ترور یا هدف نامعتبر است",
     };
   }
 
   if (!userId) {
     return {
       ok: false,
-      message: "You must be signed in to choose Merlin",
+      message: "برای انتخاب مرلین باید وارد حساب شوید",
     };
   }
 
@@ -1896,15 +1904,15 @@ export async function chooseAvalonAssassinationTarget(
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "Only the assassin can choose a valid Merlin target",
+        message: "فقط قاتل می‌تواند هدف معتبر برای مرلین انتخاب کند",
       };
     }
 
     const winnerSide = assassination.targetRole === "merlin" ? "evil" : "good";
     const winMessage =
       winnerSide === "evil"
-        ? "Game ended. Assassin found Merlin. Evil wins."
-        : "Game ended. Assassin missed Merlin. Good wins.";
+        ? "بازی تمام شد. قاتل مرلین را پیدا کرد. شر برنده شد."
+        : "بازی تمام شد. قاتل مرلین را پیدا نکرد. خیر برنده شد.";
 
     await client.query(
       `
@@ -1998,14 +2006,14 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
   ) {
     return {
       ok: false,
-      message: "Invalid game, mission, or vote",
+      message: "شناسه بازی، ماموریت یا رأی نامعتبر است",
     };
   }
 
   if (!userId) {
     return {
       ok: false,
-      message: "You must be signed in to vote for the mission",
+      message: "برای رأی دادن به ماموریت باید وارد حساب شوید",
     };
   }
 
@@ -2079,7 +2087,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "Only mission team members who have not voted can vote",
+        message: "فقط اعضای تیم ماموریت که هنوز رأی نداده‌اند می‌توانند رأی بدهند",
       };
     }
 
@@ -2097,7 +2105,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "Mission vote was not saved",
+        message: "رأی ماموریت ذخیره نشد",
       };
     }
 
@@ -2137,7 +2145,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
       await createAvalonPublicMessage(
         client,
         gameId,
-        `Mission voting completed. Result: ${finalResult}. Success: ${voteSummary.successCount}, fail: ${voteSummary.failCount}.`,
+        `رأی‌گیری ماموریت کامل شد. نتیجه: ${AVALON_MISSION_RESULT_LABELS[finalResult]}. موفق: ${voteSummary.successCount}، شکست: ${voteSummary.failCount}.`,
       );
 
       await client.query(
@@ -2162,7 +2170,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
 
         return {
           ok: true,
-          message: "Mission voting completed",
+          message: "رأی‌گیری ماموریت کامل شد",
           gameId,
           missionId,
           seatId: mission.seatId,
@@ -2177,7 +2185,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
         await createAvalonPublicMessage(
           client,
           gameId,
-          "Game ended. Evil wins.",
+          "بازی تمام شد. شر برنده شد.",
         );
         await client.query(
           `
@@ -2208,7 +2216,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
             SET
               action_required_type = NULL,
               action_required_id = NULL,
-              private_message = 'Game ended. Evil wins.'
+              private_message = 'بازی تمام شد. شر برنده شد.'
             WHERE game_id = $1
           `,
           [gameId],
@@ -2217,7 +2225,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
 
         return {
           ok: true,
-          message: "Mission voting completed",
+          message: "رأی‌گیری ماموریت کامل شد",
           gameId,
           missionId,
           seatId: mission.seatId,
@@ -2243,7 +2251,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
 
           return {
             ok: true,
-            message: "Mission voting completed",
+            message: "رأی‌گیری ماموریت کامل شد",
             gameId,
             missionId,
             seatId: mission.seatId,
@@ -2264,8 +2272,8 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
     return {
       ok: true,
       message: isVoteClosed
-        ? "Mission voting completed"
-        : "Mission vote saved",
+        ? "رأی‌گیری ماموریت کامل شد"
+        : "رأی ماموریت ذخیره شد",
       gameId,
       missionId,
       seatId: mission.seatId,
