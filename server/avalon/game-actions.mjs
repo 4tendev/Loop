@@ -5,7 +5,7 @@ const AVALON_ROLE_LABELS = {
   merlin: "مرلین",
   percival: "پرسیوال",
   servant: "خدمتگزار وفادار",
-  assassin: "قاتل",
+  assassin: "اساسین",
   morgana: "مورگانا",
   mordred: "موردرد",
   oberon: "اوبرون",
@@ -251,7 +251,7 @@ export async function createAvalonAssassinationPhase(client, gameId) {
       UPDATE avalon_seats
       SET
         private_message = CASE
-          WHEN id = $2 THEN 'شما قاتل هستید. مرلین را انتخاب کنید.'
+          WHEN id = $2 THEN 'شما اساسین هستید. مرلین را انتخاب کنید.'
           ELSE 'منتظر پایان ترور هستیم.'
         END,
         action_required_type = CASE
@@ -1904,15 +1904,15 @@ export async function chooseAvalonAssassinationTarget(
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "فقط قاتل می‌تواند هدف معتبر برای مرلین انتخاب کند",
+        message: "فقط اساسین می‌تواند هدف معتبر برای مرلین انتخاب کند",
       };
     }
 
     const winnerSide = assassination.targetRole === "merlin" ? "evil" : "good";
     const winMessage =
       winnerSide === "evil"
-        ? "بازی تمام شد. قاتل مرلین را پیدا کرد. شر برنده شد."
-        : "بازی تمام شد. قاتل مرلین را پیدا نکرد. خیر برنده شد.";
+        ? "بازی تمام شد. اساسین مرلین را پیدا کرد. شر برنده شد."
+        : "بازی تمام شد. اساسین مرلین را پیدا نکرد. خیر برنده شد.";
 
     await client.query(
       `
