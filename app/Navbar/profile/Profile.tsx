@@ -35,7 +35,7 @@ export default function Profile({ user }: { user: ApiUser }) {
   }
 
   return (
-    <div className="drawer">
+    <div className={`drawer ${isDrawerOpen ? "z-[1000]" : ""}`}>
       <input
         id="my-drawer-1"
         type="checkbox"
@@ -48,7 +48,7 @@ export default function Profile({ user }: { user: ApiUser }) {
           <ProfileDefaultImage profileImage={user.profileImage || "/avatar.png"} />
         </label>
       </div>
-      <div className="drawer-side">
+      <div className="drawer-side z-[1000]">
         <label
           htmlFor="my-drawer-1"
           aria-label="بستن منو"

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 const LIGHT_THEME = "cupcake";
-const DARK_THEME = "synthwave";
+const DARK_THEME = "halloween";
 const THEME_STORAGE_KEY = "loop-theme";
 
 type Theme = typeof LIGHT_THEME | typeof DARK_THEME;

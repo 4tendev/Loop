@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl" data-theme="synthwave" suppressHydrationWarning>
+    <html lang="fa" dir="rtl" data-theme="halloween" suppressHydrationWarning>
       <body className="h-dvh overflow-hidden flex flex-col">
         <Script
           id="theme-initializer"
@@ -41,7 +41,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeInitializer }}
         />
         <UserProvider>
-          <header className="h-18 shrink-0">
+          <header className="relative z-[1000] h-18 shrink-0">
             <Navbar />
           </header>
 
