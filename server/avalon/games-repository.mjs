@@ -250,6 +250,16 @@ async function ensureAvalonMessageColumns() {
     ADD COLUMN IF NOT EXISTS private_message text
   `);
   await pool.query(`
+    UPDATE avalon_seats
+    SET private_message = ''
+    WHERE private_message IS NULL
+  `);
+  await pool.query(`
+    ALTER TABLE avalon_seats
+    ALTER COLUMN private_message SET DEFAULT '',
+    ALTER COLUMN private_message SET NOT NULL
+  `);
+  await pool.query(`
     ALTER TABLE avalon_seats
     ADD COLUMN IF NOT EXISTS action_required_type text
   `);
