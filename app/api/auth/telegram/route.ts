@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { badRequest } from "@/lib/api-response";
 import {
+  getTelegramAuthOrigin,
   getOrCreateTelegramUser,
   type TelegramLoginPayload,
   verifyTelegramLoginPayload,
@@ -37,8 +38,54 @@ function getPayloadFromRequest(request: NextRequest) {
   return payload as TelegramLoginPayload;
 }
 
+function isLocalOrigin(origin: string) {
+  try {
+    const { hostname } = new URL(origin);
+
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function getForwardedOrigin(request: NextRequest) {
+  const forwardedHost =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+
+  if (!forwardedHost) {
+    return "";
+  }
+
+  const host = forwardedHost.split(",")[0]?.trim();
+
+  if (!host) {
+    return "";
+  }
+
+  const forwardedProto = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+  const protocol =
+    forwardedProto ||
+    (/^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host) ? "http" : "https");
+
+  return `${protocol}://${host}`;
+}
+
+function getRedirectUrl(request: NextRequest, path: string) {
+  const configuredOrigin = getTelegramAuthOrigin();
+  const forwardedOrigin = getForwardedOrigin(request);
+  const origin =
+    configuredOrigin && !isLocalOrigin(configuredOrigin)
+      ? configuredOrigin
+      : forwardedOrigin || configuredOrigin || request.nextUrl.origin;
+
+  return new URL(path, origin);
+}
+
 function redirectWithError(request: NextRequest, message: string) {
-  const url = new URL("/auth", request.url);
+  const url = getRedirectUrl(request, "/auth");
   url.searchParams.set("telegramError", message);
 
   return NextResponse.redirect(url);
@@ -63,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     const user = await getOrCreateTelegramUser(payload);
     const session = await createUserSession(user);
-    const response = NextResponse.redirect(new URL("/user", request.url));
+    const response = NextResponse.redirect(getRedirectUrl(request, "/user"));
 
     setSessionCookie(response, session);
 
