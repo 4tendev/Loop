@@ -4,7 +4,8 @@ import {
   getUserSessionBySsid,
   sessionCookieName,
 } from "@/lib/auth/session";
-import EmailAuth from "./email/page";
+import { getTelegramBotUsername } from "@/lib/auth/telegram";
+import AuthClient from "./AuthClient";
 
 export default async function Auth() {
   const cookieStore = await cookies();
@@ -15,5 +16,5 @@ export default async function Auth() {
     redirect("/user");
   }
 
-  return <EmailAuth />;
+  return <AuthClient telegramBotUsername={getTelegramBotUsername()} />;
 }
