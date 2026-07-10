@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl" data-theme="cupcake" suppressHydrationWarning>
+    <html lang="fa" dir="rtl" data-theme="synthwave" suppressHydrationWarning>
       <body className="h-screen overflow-hidden flex flex-col">
         <Script
           id="theme-initializer"
