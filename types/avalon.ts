@@ -44,7 +44,7 @@ export type AvalonSeat = {
   id: string;
   role: AvalonRoleName;
   number: number;
-  privateMessage: string;
+  privateMessage: string | null;
   actionRequired: AvalonSeatActionRequired | null;
   player: User | null;
 };

@@ -41,7 +41,7 @@ type AvalonSeatRow = {
   id: string;
   role: AvalonRoleName;
   number: number;
-  privateMessage: string;
+  privateMessage: string | null;
   actionRequiredType: AvalonSeatActionRequired["type"] | null;
   actionRequiredId: string | null;
 };
@@ -170,7 +170,7 @@ async function ensureAvalonMessageColumns(
   `);
   await queryable.query(`
     ALTER TABLE avalon_seats
-    ADD COLUMN IF NOT EXISTS private_message text NOT NULL DEFAULT 'private message'
+    ADD COLUMN IF NOT EXISTS private_message text
   `);
   await queryable.query(`
     ALTER TABLE avalon_seats
@@ -270,8 +270,8 @@ export async function POST(request: NextRequest) {
 
     const seatResult = await client.query<AvalonSeatRow>(
       `
-        INSERT INTO avalon_seats (game_id, role, number, private_message)
-        SELECT $1, role, number, 'private message'
+        INSERT INTO avalon_seats (game_id, role, number)
+        SELECT $1, role, number
         FROM unnest($2::text[], $3::integer[]) AS seat(role, number)
         RETURNING
           id,

@@ -146,7 +146,7 @@ export function createAvalonWebSocketGateway({
   }
 
   function getPrivateMessage(game, user) {
-    return getOwnSeat(game, user)?.privateMessage ?? "private message";
+    return getOwnSeat(game, user)?.privateMessage ?? null;
   }
 
   function getActionRequired(game, user) {

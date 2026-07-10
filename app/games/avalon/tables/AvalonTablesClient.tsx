@@ -176,7 +176,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
                     pendingLadyTargetId={pendingLadyTargetId}
                     pendingNominationQuestId={pendingNominationQuestId}
                     pendingSeatGameId={pendingSeatGameId}
-                    privateMessage={tableSnapshot?.privateMessage ?? ""}
+                    privateMessage={tableSnapshot?.privateMessage ?? null}
                     selectedSeatId={selectedSeatByGame[game.id] ?? null}
                     selectedTeamSeatIds={
                       tableSnapshot?.gameId === game.id &&

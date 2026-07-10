@@ -633,7 +633,7 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
       SET
         private_message = CASE
           WHEN id = $2 THEN 'You are Lady of the Lake. Choose your target.'
-          ELSE 'private message'
+          ELSE NULL
         END,
         action_required_type = CASE
           WHEN id = $2 THEN 'avalon.ladyTarget'
@@ -1142,7 +1142,7 @@ async function createQuestPhase(client, gameId) {
       SET
         private_message = CASE
           WHEN id = $2 THEN private_message
-          ELSE 'private message'
+          ELSE NULL
         END,
         action_required_type = NULL,
         action_required_id = NULL
@@ -1582,7 +1582,7 @@ export async function decideAvalonQuest(gameId, questId, decision, userId) {
         SET
           action_required_type = NULL,
           action_required_id = NULL,
-          private_message = 'private message'
+          private_message = NULL
         WHERE id = $1
       `,
       [quest.seatId],
@@ -1790,7 +1790,7 @@ export async function chooseAvalonLadyTarget(
         SET
           action_required_type = NULL,
           action_required_id = NULL,
-          private_message = 'private message'
+          private_message = NULL
         WHERE game_id = $1
       `,
       [gameId],
@@ -2107,7 +2107,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
         SET
           action_required_type = NULL,
           action_required_id = NULL,
-          private_message = 'private message'
+          private_message = NULL
         WHERE id = $1
       `,
       [mission.seatId],
@@ -2538,7 +2538,7 @@ export async function changeAvalonSeat(gameId, seatId, userId) {
         UPDATE avalon_seats current_seat
         SET
           player_id = NULL,
-          private_message = 'private message'
+          private_message = NULL
         FROM avalon_games game
         WHERE
           current_seat.game_id = $1

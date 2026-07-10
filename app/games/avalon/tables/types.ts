@@ -80,7 +80,7 @@ export type AvalonWsUser = {
 export type AvalonTableSnapshot = {
   gameId: string | null;
   tableInfo: AvalonWsGame | null;
-  privateMessage: string;
+  privateMessage: string | null;
   actionRequired: AvalonSeatActionRequired | null;
 };
 

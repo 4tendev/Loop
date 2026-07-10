@@ -33,7 +33,7 @@ type AvalonTableCardProps = {
   pendingLadyTargetId: string | null;
   pendingAssassinActionId: string | null;
   actionRequired: AvalonSeatActionRequired | null;
-  privateMessage?: string;
+  privateMessage?: string | null;
   selectedTeamSeatIds: string[];
   selectedLadyTargetSeatId: string | null;
   selectedAssassinTargetSeatId: string | null;
