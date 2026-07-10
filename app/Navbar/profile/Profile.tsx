@@ -1,15 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useUser } from "@/app/providers/UserProvider";
 import type { ApiUser } from "@/types/user";
 import ProfileDefaultImage from "./ProfileDefaultImage";
 
 export default function Profile({ user }: { user: ApiUser }) {
+  const router = useRouter();
+  const { setUser } = useUser();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   function closeDrawer() {
     setIsDrawerOpen(false);
+  }
+
+  async function logOut() {
+    setIsLoggingOut(true);
+
+    try {
+      await fetch("/api/user", {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+    } finally {
+      setUser(null);
+      closeDrawer();
+      setIsLoggingOut(false);
+      router.push("/auth");
+      router.refresh();
+    }
   }
 
   return (
@@ -40,6 +62,19 @@ export default function Profile({ user }: { user: ApiUser }) {
             <Link href="/user" onClick={closeDrawer}>
               داشبورد
             </Link>
+          </li>
+          <li>
+            <button
+              className="text-error"
+              disabled={isLoggingOut}
+              onClick={logOut}
+              type="button"
+            >
+              {isLoggingOut ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : null}
+              خروج
+            </button>
           </li>
         </ul>
       </div>

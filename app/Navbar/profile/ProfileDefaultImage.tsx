@@ -15,7 +15,8 @@ export default function ProfileDefaultImage({
           tabIndex={0}
           width={48}
           height={48}
-          className="rounded-full btn btn-outline p-0 border border-info"
+          className="rounded-full btn  p-0"
+          unoptimized
           src={profileImage}
         />
       </div>

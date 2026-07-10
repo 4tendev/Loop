@@ -1,4 +1,23 @@
 services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      AVALON_WS_HOST: 0.0.0.0
+      AVALON_WS_PORT: 3001
+      DATABASE_URL: postgresql://loop:loop@postgres:5432/loop
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped

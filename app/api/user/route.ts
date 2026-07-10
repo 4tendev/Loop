@@ -1,6 +1,3 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextRequest } from "next/server";
 import {
   apiResponse,
@@ -9,9 +6,12 @@ import {
   unauthorized,
 } from "@/lib/api-response";
 import {
+  clearSessionCookie,
+  deleteUserSession,
   getUserSessionFromRequest,
   updateUserSession,
 } from "@/lib/auth/session";
+import { saveBunnyProfileImage } from "@/lib/storage/bunny-profile-image";
 import { getPostgresPool } from "@/lib/postgres";
 import type { User } from "@/types/user";
 
@@ -31,43 +31,15 @@ function unknownUser() {
   return unauthorized("کاربر پیدا نشد");
 }
 
-function getImageExtension(file: File) {
-  if (file.type === "image/png") return ".png";
-  if (file.type === "image/jpeg") return ".jpg";
-  if (file.type === "image/webp") return ".webp";
-  if (file.type === "image/gif") return ".gif";
-
-  return "";
-}
-
-async function saveProfileImage(file: File) {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Invalid image file");
-  }
-
-  const extension = getImageExtension(file);
-
-  if (!extension) {
-    throw new Error("Unsupported image file type");
-  }
-
-  const uploadsDir = path.join(process.cwd(), "public", "profile-images");
-  await mkdir(uploadsDir, { recursive: true });
-
-  const filename = `${randomUUID()}${extension}`;
-  const destination = path.join(uploadsDir, filename);
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  await writeFile(destination, buffer);
-
-  return `/profile-images/${filename}`;
+function guestUser() {
+  return apiResponse(200, "کاربر پیدا نشد", null);
 }
 
 export async function GET(request: NextRequest) {
   const session = await getUserSessionFromRequest(request);
 
   if (!session) {
-    return unknownUser();
+    return guestUser();
   }
 
   return apiResponse(200, "کاربر پیدا شد", session.user);
@@ -96,7 +68,7 @@ export async function PATCH(request: NextRequest) {
       }
 
       if (file instanceof File && file.size > 0) {
-        profileImage = await saveProfileImage(file);
+        profileImage = await saveBunnyProfileImage(file);
       }
     } else {
       const body = (await request.json()) as {
@@ -162,4 +134,23 @@ export async function PATCH(request: NextRequest) {
 
     return serverError("به‌روزرسانی کاربر انجام نشد");
   }
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await getUserSessionFromRequest(request);
+  const response = apiResponse(200, "خروج انجام شد", null);
+
+  if (session) {
+    try {
+      await deleteUserSession(session);
+    } catch (error) {
+      console.error("Failed to delete user session", error);
+
+      return serverError("خروج انجام نشد");
+    }
+  }
+
+  clearSessionCookie(response);
+
+  return response;
 }

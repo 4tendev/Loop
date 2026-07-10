@@ -4,14 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:avalon": "node server/avalon-server.mjs",
     "build": "next build",
     "start": "next start",
+    "migrate": "node scripts/migrate.mjs",
     "lint": "next lint",
     "db:up": "docker compose up -d postgres redis",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres redis"
   },
   "dependencies": {
+    "@bunny.net/storage-sdk": "^0.3.1",
     "next": "^16.2.10",
     "pg": "^8.22.0",
     "react": "19.2.7",

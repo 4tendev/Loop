@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/providers/UserProvider";
 import type { ApiUser } from "@/types/user";
 
@@ -23,22 +24,102 @@ function formatUserType(type: ApiUser["type"]) {
   return type === "admin" ? "مدیر" : "عضو";
 }
 
+async function preprocessProfileImage(file: File) {
+  const objectUrl = URL.createObjectURL(file);
+  const image = new window.Image();
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Failed to load image"));
+      image.src = objectUrl;
+    });
+
+    const size = 1280;
+    const sourceSize = Math.max(1, Math.min(image.width, image.height));
+    const sourceX = Math.max(0, Math.floor((image.width - sourceSize) / 2));
+    const sourceY = Math.max(0, Math.floor((image.height - sourceSize) / 2));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Canvas not supported");
+    }
+
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize,
+      0,
+      0,
+      size,
+      size,
+    );
+
+    const pixelStep = 8;
+    const tinyCanvas = document.createElement("canvas");
+    tinyCanvas.width = Math.max(1, Math.round(size / pixelStep));
+    tinyCanvas.height = Math.max(1, Math.round(size / pixelStep));
+
+    const tinyContext = tinyCanvas.getContext("2d");
+    if (!tinyContext) {
+      throw new Error("Canvas not supported");
+    }
+
+    tinyContext.imageSmoothingEnabled = false;
+    tinyContext.drawImage(canvas, 0, 0, tinyCanvas.width, tinyCanvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.clearRect(0, 0, size, size);
+    context.drawImage(
+      tinyCanvas,
+      0,
+      0,
+      tinyCanvas.width,
+      tinyCanvas.height,
+      0,
+      0,
+      size,
+      size,
+    );
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.99),
+    );
+    if (!blob) {
+      throw new Error("Failed to export image");
+    }
+
+    return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+      type: "image/jpeg",
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export default function Dashboard() {
   const { isCheckingUser, setUser, user } = useUser();
+  const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     setName(user?.name ?? "");
-    setProfileImageFile(null);
   }, [user]);
 
   const trimmedName = name.trim();
-  const canSaveName = !!user && !!trimmedName && trimmedName !== user.name && !isSaving;
-  const canSaveImage = !!user && !!profileImageFile && !isSaving;
+  const canSaveName =
+    !!user && !!trimmedName && trimmedName !== user.name && !isSaving;
 
   async function updateName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,10 +158,8 @@ export default function Dashboard() {
     }
   }
 
-  async function updateProfileImage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!canSaveImage || !profileImageFile) {
+  async function updateProfileImage(file: File) {
+    if (!user || isSaving) {
       return;
     }
 
@@ -89,8 +168,9 @@ export default function Dashboard() {
     setIsSaving(true);
 
     try {
+      const processedFile = await preprocessProfileImage(file);
       const formData = new FormData();
-      formData.append("profileImage", profileImageFile);
+      formData.append("profileImage", processedFile);
 
       const response = await fetch("/api/user", {
         method: "PATCH",
@@ -105,13 +185,16 @@ export default function Dashboard() {
       }
 
       setUser(result.data);
-      setProfileImageFile(null);
       setSuccess("تصویر پروفایل به‌روزرسانی شد.");
     } catch {
       setError("به‌روزرسانی تصویر انجام نشد. دوباره تلاش کنید.");
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function openProfileImagePicker() {
+    profileImageInputRef.current?.click();
   }
 
   if (isCheckingUser) {
@@ -159,48 +242,58 @@ export default function Dashboard() {
             <div className="space-y-2">
               <h1 className="text-2xl font-semibold">حساب کاربری</h1>
               <p className="text-sm text-base-content/70">
-                اطلاعات پروفایل خود را ببینید و نام نمایشی یا تصویر پروفایل را تغییر دهید.
+                اطلاعات پروفایل خود را ببینید و نام نمایشی یا تصویر پروفایل را
+                تغییر دهید.
               </p>
             </div>
 
-            <div className="grid gap-3 rounded-box border border-base-300 bg-base-200/60 p-4 text-sm sm:grid-cols-2">
-              <div className="sm:col-span-2 flex items-center gap-4">
+            <div className="flex items-center gap-4 rounded-box border border-base-300 bg-base-200/60 p-4">
+              <div className="relative">
                 <div className="avatar">
-                  <div className="w-20 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
+                  <div className="w-20 rounded-full">
                     <Image
                       alt={user.name}
                       src={user.profileImage || "/avatar.png"}
                       width={80}
                       height={80}
                       className="rounded-full object-cover"
+                      unoptimized
                     />
                   </div>
                 </div>
-                <div>
-                  <p className="text-base-content/60">تصویر پروفایل</p>
-                  <p className="break-all font-medium" dir="ltr">
-                    {user.profileImage}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  className="absolute -right-1 -bottom-1 grid h-8 w-8 place-items-center rounded-full bg-base-100 text-base-content/70 shadow-md transition hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={openProfileImagePicker}
+                  disabled={isSaving}
+                  aria-label="ویرایش تصویر پروفایل"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.862 4.487a2.25 2.25 0 0 1 3.182 3.182L8.62 19.093a4.5 4.5 0 0 1-1.897 1.13l-3.01.89.89-3.01a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 6l3 3"
+                    />
+                  </svg>
+                </button>
               </div>
-
               <div>
-                <p className="text-base-content/60">شناسه کاربر</p>
-                <p className="break-all text-left font-medium" dir="ltr">
-                  {user.id}
+                <p className="text-base font-medium">{user.name}</p>
+                <p className="text-sm text-base-content/60">
+                  {formatUserType(user.type)}
                 </p>
-              </div>
-              <div>
-                <p className="text-base-content/60">نوع حساب</p>
-                <p className="font-medium">{formatUserType(user.type)}</p>
-              </div>
-              <div>
-                <p className="text-base-content/60">تاریخ ساخت</p>
-                <p className="font-medium">{formatDate(user.createdAt)}</p>
-              </div>
-              <div>
-                <p className="text-base-content/60">آخرین به‌روزرسانی</p>
-                <p className="font-medium">{formatDate(user.updatedAt)}</p>
               </div>
             </div>
 
@@ -221,33 +314,34 @@ export default function Dashboard() {
                 />
               </label>
 
-              <button className="btn btn-primary w-full" disabled={!canSaveName}>
-                {isSaving ? <span className="loading loading-spinner loading-sm" /> : null}
+              <button
+                className="btn btn-primary w-full"
+                disabled={!canSaveName}
+              >
+                {isSaving ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : null}
                 ذخیره نام
               </button>
             </form>
 
-            <form className="flex flex-col gap-5" onSubmit={updateProfileImage}>
-              <label className="flex w-full flex-col gap-2">
-                <span className="label-text">تصویر پروفایل</span>
-                <input
-                  accept="image/*"
-                  className="file-input file-input-bordered w-full"
-                  disabled={isSaving}
-                  onChange={(event) => {
-                    setProfileImageFile(event.target.files?.[0] ?? null);
-                    setError(null);
-                    setSuccess(null);
-                  }}
-                  type="file"
-                />
-              </label>
+            <input
+              ref={profileImageInputRef}
+              accept="image/*"
+              className="hidden"
+              disabled={isSaving}
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
 
-              <button className="btn btn-secondary w-full" disabled={!canSaveImage}>
-                {isSaving ? <span className="loading loading-spinner loading-sm" /> : null}
-                ذخیره تصویر
-              </button>
-            </form>
+                if (!file) {
+                  return;
+                }
+
+                await updateProfileImage(file);
+              }}
+              type="file"
+            />
 
             {error ? <p className="text-sm text-error">{error}</p> : null}
             {success ? <p className="text-sm text-success">{success}</p> : null}

@@ -18,6 +18,16 @@ npm run dev
 
 Then open http://localhost:3000.
 
+Start the Avalon websocket server in another terminal:
+
+```bash
+npm run dev:avalon
+```
+
+The read-only active games endpoint is `ws://localhost:3001/ws/avalon/games`.
+It sends `avalon.games` messages containing games whose status is not
+`completed` or `cancelled`.
+
 ## Databases
 
 Start PostgreSQL and Redis:

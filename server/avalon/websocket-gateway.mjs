@@ -1,0 +1,402 @@
+import {
+  closeSocket,
+  createMessage,
+  parseFrame,
+  send,
+  writeHandshake,
+} from "./websocket-protocol.mjs";
+import {
+  avalonTableActionTypes,
+} from "./table-actions.mjs";
+
+export function createAvalonWebSocketGateway({
+  actions,
+  clients,
+  getActiveAvalonGames,
+  getUserFromRequest,
+  wsPath,
+}) {
+  async function broadcastActiveGames({ force = false } = {}) {
+    const watchedGameIds = Array.from(
+      new Set(
+        Array.from(clients)
+          .map((client) => client.gameId)
+          .filter(Boolean),
+      ),
+    );
+    const games = await getActiveAvalonGames({
+      includeGameIds: watchedGameIds,
+    });
+
+    for (const client of clients) {
+      const clientGames = client.gameId
+        ? games.filter((game) => game.id === client.gameId)
+        : games.filter(
+            (game) =>
+              game.status !== "completed" && game.status !== "cancelled",
+          );
+
+      if (client.gameId) {
+        sendTableSnapshot(client, clientGames[0] ?? null, { force });
+        continue;
+      }
+
+      const publicClientGames = clientGames.map((game) =>
+        sanitizeGameForClient(game),
+      );
+      const gamesJson = JSON.stringify(publicClientGames);
+
+      if (!force && gamesJson === client.latestGamesJson) {
+        continue;
+      }
+
+      client.latestGamesJson = gamesJson;
+      send(client, createMessage("avalon.games", publicClientGames));
+    }
+  }
+
+  async function acceptWebSocket(request, socket, requestUrl) {
+    if (!writeHandshake(request, socket)) {
+      return;
+    }
+
+    const user = await getUserFromRequest(request).catch((error) => {
+      console.error("Failed to read websocket user session", error);
+      return null;
+    });
+
+    socket.user = user;
+    socket.gameId = requestUrl.searchParams.get("gameId") || null;
+    socket.latestGamesJson = "";
+    socket.latestTableJson = "";
+    clients.add(socket);
+    send(
+      socket,
+      createMessage("hello", {
+        endpoint: wsPath,
+        gameId: socket.gameId,
+        capabilities: avalonTableActionTypes,
+        user: user
+          ? {
+              id: user.id,
+              name: user.name,
+              profileImage: user.profileImage,
+            }
+          : null,
+      }),
+    );
+    broadcastActiveGames({ force: true }).catch((error) => {
+      console.error("Failed to send Avalon games snapshot", error);
+      send(socket, createMessage("error", { message: "Failed to load games" }));
+    });
+
+    socket.on("data", (buffer) => {
+      const frame = parseFrame(buffer);
+
+      if (!frame) {
+        return;
+      }
+
+      if (frame.opcode === 0x8) {
+        closeSocket(socket);
+        return;
+      }
+
+      if (frame.opcode === 0x9) {
+        socket.write(Buffer.from([0x8a, 0x00]));
+        return;
+      }
+
+      if (frame.opcode !== 0x1) {
+        return;
+      }
+
+      handleClientMessage(socket, frame.text);
+    });
+
+    socket.on("close", () => {
+      clients.delete(socket);
+    });
+    socket.on("error", () => {
+      clients.delete(socket);
+    });
+  }
+
+  function sendTableSnapshot(socket, game, { force = false } = {}) {
+    const snapshot = createTableSnapshot(game, socket.user);
+    const tableJson = JSON.stringify(snapshot);
+
+    if (!force && tableJson === socket.latestTableJson) {
+      return;
+    }
+
+    socket.latestTableJson = tableJson;
+    send(socket, createMessage("avalon.table", snapshot));
+  }
+
+  function createTableSnapshot(game, user) {
+    return {
+      gameId: game?.id ?? null,
+      tableInfo: game
+        ? sanitizeGameForClient(game, user)
+        : null,
+      privateMessage: getPrivateMessage(game, user),
+      actionRequired: getActionRequired(game, user),
+    };
+  }
+
+  function getPrivateMessage(game, user) {
+    return getOwnSeat(game, user)?.privateMessage ?? "private message";
+  }
+
+  function getActionRequired(game, user) {
+    return getOwnSeat(game, user)?.actionRequired ?? null;
+  }
+
+  function getOwnSeat(game, user) {
+    if (!game || !user) {
+      return null;
+    }
+
+    return game.seats.find((seat) => seat.player?.id === user.id) ?? null;
+  }
+
+  function sanitizeGameForClient(game, user = null) {
+    const ownSeat = getOwnSeat(game, user);
+    const canSeeOwnRole = game.startedAt !== null && ownSeat?.role;
+    const canSeeAllRoles = game.status === "completed" && game.winnerSide !== null;
+
+    return {
+      ...game,
+      phases: game.phases.map((phase) => sanitizePhaseForClient(phase, ownSeat)),
+      seats: game.seats.map(({ privateMessage, actionRequired, role, ...seat }) => {
+        if (canSeeAllRoles || (canSeeOwnRole && seat.id === ownSeat.id)) {
+          return {
+            ...seat,
+            role,
+          };
+        }
+
+        return seat;
+      }),
+    };
+  }
+
+  function sanitizePhaseForClient(phase, ownSeat) {
+    if (!phase.ladyCheck?.targetSide) {
+      return phase;
+    }
+
+    const canSeeTargetSide =
+      phase.endedAt !== null && phase.ladyCheck.ladySeatId === ownSeat?.id;
+
+    if (canSeeTargetSide) {
+      return phase;
+    }
+
+    const { targetSide, ...publicLadyCheck } = phase.ladyCheck;
+
+    return {
+      ...phase,
+      ladyCheck: publicLadyCheck,
+    };
+  }
+
+  function handleClientMessage(socket, text) {
+    try {
+      const message = JSON.parse(text);
+
+      if (message?.type === "ping") {
+        send(socket, createMessage("pong", null));
+      }
+
+      if (message?.type === "refresh") {
+        broadcastActiveGames({ force: true }).catch((error) => {
+          console.error("Failed to refresh Avalon games", error);
+        });
+      }
+
+      if (message?.type === "avalon.cancelGame") {
+        runAction(socket, {
+          action: () =>
+            actions.cancelAvalonGame(message.data?.gameId, socket.user?.id),
+          errorMessage: "لغو بازی انجام نشد",
+          logMessage: "Failed to cancel Avalon game",
+          resultType: "avalon.cancelGame.result",
+        });
+      }
+
+      if (message?.type === "avalon.startGame") {
+        runAction(socket, {
+          action: () =>
+            actions.startAvalonGame(message.data?.gameId, socket.user?.id),
+          errorMessage: "شروع بازی انجام نشد",
+          logMessage: "Failed to start Avalon game",
+          resultType: "avalon.startGame.result",
+        });
+      }
+
+      if (message?.type === "avalon.joinSeat") {
+        runAction(socket, {
+          action: () =>
+            actions.joinAvalonSeat(
+              message.data?.gameId,
+              message.data?.seatId,
+              socket.user?.id,
+            ),
+          errorMessage: "نشستن روی صندلی انجام نشد",
+          logMessage: "Failed to join Avalon seat",
+          resultType: "avalon.seat.result",
+        });
+      }
+
+      if (message?.type === "avalon.changeSeat") {
+        runAction(socket, {
+          action: () =>
+            actions.changeAvalonSeat(
+              message.data?.gameId,
+              message.data?.seatId,
+              socket.user?.id,
+            ),
+          errorMessage: "تغییر صندلی انجام نشد",
+          logMessage: "Failed to change Avalon seat",
+          resultType: "avalon.seat.result",
+        });
+      }
+
+      if (message?.type === "avalon.leaveSeat") {
+        runAction(socket, {
+          action: () =>
+            actions.leaveAvalonSeat(message.data?.gameId, socket.user?.id),
+          errorMessage: "ترک صندلی انجام نشد",
+          logMessage: "Failed to leave Avalon seat",
+          resultType: "avalon.seat.result",
+        });
+      }
+
+      if (message?.type === "avalon.nightAlreadyCheck") {
+        runAction(socket, {
+          action: () =>
+            actions.nightAlreadyCheckAvalonGame(
+              message.data?.gameId,
+              message.data?.nightCheckId ?? message.data?.id,
+              socket.user?.id,
+            ),
+          errorMessage: "ثبت بررسی شب انجام نشد",
+          logMessage: "Failed to complete Avalon night check",
+          resultType: "avalon.nightAlreadyCheck.result",
+        });
+      }
+
+      if (message?.type === "avalon.nominateTeammates") {
+        runAction(socket, {
+          action: () =>
+            actions.nominateAvalonTeammates(
+              message.data?.gameId,
+              message.data?.questId ?? message.data?.id,
+              message.data?.nominatedSeats ??
+                message.data?.nominatedSeatIds ??
+                message.data?.seatIds,
+              socket.user?.id,
+            ),
+          errorMessage: "انتخاب تیم ماموریت انجام نشد",
+          logMessage: "Failed to nominate Avalon teammates",
+          resultType: "avalon.nominateTeammates.result",
+        });
+      }
+
+      if (message?.type === "avalon.questDecision") {
+        runAction(socket, {
+          action: () =>
+            actions.decideAvalonQuest(
+              message.data?.gameId,
+              message.data?.questId ?? message.data?.id,
+              message.data?.decision,
+              socket.user?.id,
+            ),
+          errorMessage: "ثبت تصمیم ماموریت انجام نشد",
+          logMessage: "Failed to decide Avalon quest",
+          resultType: "avalon.questDecision.result",
+        });
+      }
+
+      if (message?.type === "avalon.missionVote") {
+        runAction(socket, {
+          action: () =>
+            actions.voteAvalonMission(
+              message.data?.gameId,
+              message.data?.missionId ?? message.data?.id,
+              message.data?.vote,
+              socket.user?.id,
+            ),
+          errorMessage: "Mission vote was not saved",
+          logMessage: "Failed to vote Avalon mission",
+          resultType: "avalon.missionVote.result",
+        });
+      }
+
+      if (message?.type === "avalon.ladyTarget") {
+        runAction(socket, {
+          action: () =>
+            actions.chooseAvalonLadyTarget(
+              message.data?.gameId,
+              message.data?.ladyCheckId ?? message.data?.id,
+              message.data?.targetSeatId ?? message.data?.seatId,
+              socket.user?.id,
+            ),
+          errorMessage: "Lady of the Lake target was not saved",
+          logMessage: "Failed to choose Avalon Lady target",
+          resultType: "avalon.ladyTarget.result",
+        });
+      }
+
+      if (message?.type === "avalon.assassinAction") {
+        runAction(socket, {
+          action: () =>
+            actions.chooseAvalonAssassinationTarget(
+              message.data?.gameId,
+              message.data?.assassinationId ?? message.data?.id,
+              message.data?.targetSeatId ?? message.data?.seatId,
+              socket.user?.id,
+            ),
+          errorMessage: "Assassination target was not saved",
+          logMessage: "Failed to choose Avalon assassination target",
+          resultType: "avalon.assassinAction.result",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to handle websocket message", error);
+      send(socket, createMessage("error", { message: "Invalid JSON message" }));
+    }
+  }
+
+  function runAction(socket, { action, errorMessage, logMessage, resultType }) {
+    Promise.resolve()
+      .then(action)
+      .then((result) => {
+        send(socket, createMessage(resultType, result));
+
+        if (result.ok) {
+          return broadcastActiveGames({ force: true });
+        }
+
+        return null;
+      })
+      .catch((error) => {
+        console.error(logMessage, error);
+        send(
+          socket,
+          createMessage(resultType, {
+            ok: false,
+            message: errorMessage,
+          }),
+        );
+      });
+  }
+
+  return {
+    acceptWebSocket,
+    broadcastActiveGames,
+    closeSocket,
+  };
+}

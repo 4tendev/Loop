@@ -226,7 +226,7 @@ export default function EmailAuth() {
                   <span>{formatTimeLeft(timeLeftMs)} باقی مانده</span>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div  dir="ltr" className="grid grid-cols-5 gap-2">
                   {code.map((digit, index) => (
                     <input
                       aria-label={`رقم ${index + 1} کد`}

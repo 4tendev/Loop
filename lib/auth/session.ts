@@ -76,6 +76,12 @@ export async function updateUserSession(
   };
 }
 
+export async function deleteUserSession(session: Pick<UserSession, "ssid">) {
+  const redis = await getRedisClient();
+
+  await redis.del(getSessionKey(session.ssid));
+}
+
 export async function getUserSessionBySsid(
   ssid: string,
 ): Promise<UserSession | null> {
@@ -109,6 +115,16 @@ export function setSessionCookie(
   response.cookies.set(sessionCookieName, session.ssid, {
     httpOnly: true,
     maxAge: sessionCookieMaxAgeSeconds,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+}
+
+export function clearSessionCookie(response: NextResponse) {
+  response.cookies.set(sessionCookieName, "", {
+    httpOnly: true,
+    maxAge: 0,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
