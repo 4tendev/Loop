@@ -724,8 +724,8 @@ export function AvalonTableCard({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-[8.5rem] pt-2 sm:pb-40">
-            <div className="relative aspect-square w-full max-w-[25rem]">
+          <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-2">
+            <div className="relative inline-block aspect-square h-full max-h-[25rem] max-w-full">
               <div className="absolute inset-[16%] rounded-full border border-amber-700/60 bg-[radial-gradient(circle_at_50%_38%,#5c3a1f,#2a1c14_65%,#15110f)] shadow-2xl shadow-black/60" />
               <div className="absolute inset-[24%] rounded-full border border-amber-300/20 bg-stone-950/60" />
               <div className="absolute left-1/2 top-1/2 z-10 h-[32%] w-[50%] -translate-x-1/2 -translate-y-1/2">
@@ -788,7 +788,7 @@ export function AvalonTableCard({
             </div>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-amber-300/20 bg-stone-950/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-black">
+          <div className="z-30 shrink-0 border-t border-amber-300/20 bg-stone-950/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-black">
             <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-2">
               <span className="rounded-md border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-black text-amber-100">
                 {game.occupiedSeatCount}/{game.config.playerCount}

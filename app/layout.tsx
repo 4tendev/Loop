@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" data-theme="synthwave" suppressHydrationWarning>
-      <body className="h-screen overflow-hidden flex flex-col">
+      <body className="h-dvh overflow-hidden flex flex-col">
         <Script
           id="theme-initializer"
           strategy="beforeInteractive"
