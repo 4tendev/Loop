@@ -55,6 +55,25 @@ CMD ["sh", "-c", "node scripts/migrate.mjs && npm run start"]
 
 FROM nginx:1.27-alpine AS nginx
 
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/docker-compose.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
+FROM runtime AS production
+
+ENV AVALON_WS_HOST=127.0.0.1
+ENV AVALON_WS_PORT=3001
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN apk add --no-cache nginx
+
+COPY --from=web-builder /app/.next ./.next
+COPY --from=web-builder /app/public ./public
+COPY --from=web-builder /app/next.config.ts ./next.config.ts
+COPY server ./server
+COPY nginx/default.conf /etc/nginx/http.d/default.conf
+COPY scripts/start-production.sh ./scripts/start-production.sh
+
+EXPOSE 80
+
+CMD ["sh", "scripts/start-production.sh"]
