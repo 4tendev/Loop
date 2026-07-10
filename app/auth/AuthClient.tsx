@@ -34,7 +34,7 @@ export default function AuthClient({
               </p>
             </div>
 
-            <div className="join grid grid-cols-2">
+            <div dir="ltr"  className="join grid grid-cols-2">
               <button
                 className={`btn join-item ${method === "email" ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setMethod("email")}
