@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getProfileImageSrc } from "@/lib/profile-image";
 import type { ApiUser } from "@/types/user";
 
 export default function ProfileDefaultImage({
@@ -17,7 +18,7 @@ export default function ProfileDefaultImage({
           height={48}
           className="rounded-full btn  p-0"
           unoptimized
-          src={profileImage}
+          src={getProfileImageSrc(profileImage)}
         />
       </div>
     </div>

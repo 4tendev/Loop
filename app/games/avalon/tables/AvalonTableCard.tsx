@@ -8,6 +8,7 @@ import {
   type AvalonQuestDecisionValue,
   type AvalonSeatActionRequired,
 } from "@/types/avalon";
+import { getProfileImageSrc } from "@/lib/profile-image";
 
 import { formatTime, statusClasses, statusLabels } from "./avalonTableUtils";
 import type {
@@ -354,7 +355,7 @@ export function AvalonTableCard({
             <img
               alt={seat.player.name}
               className="h-10 w-10 rounded-full object-cover"
-              src={seat.player.profileImage || "/avatar.png"}
+              src={getProfileImageSrc(seat.player.profileImage)}
             />
           ) : (
             seat.number
@@ -403,7 +404,7 @@ export function AvalonTableCard({
     const seatImage =
       isTerminalGame && roleImage
         ? roleImage
-        : (seat.player?.profileImage || "/avatar.png");
+        : getProfileImageSrc(seat.player?.profileImage);
     const seatImageAlt =
       isTerminalGame && seat.role
         ? seat.role

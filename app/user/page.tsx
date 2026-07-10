@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/providers/UserProvider";
+import { getProfileImageSrc } from "@/lib/profile-image";
 import type { ApiUser } from "@/types/user";
 
 type UpdateUserResponse = {
@@ -253,7 +254,7 @@ export default function Dashboard() {
                   <div className="w-20 rounded-full">
                     <Image
                       alt={user.name}
-                      src={user.profileImage || "/avatar.png"}
+                      src={getProfileImageSrc(user.profileImage)}
                       width={80}
                       height={80}
                       className="rounded-full object-cover"
