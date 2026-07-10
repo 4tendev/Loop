@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import EmailAuth from "./email/page";
-import TelegramAuth from "./TelegramAuth";
+import TelegramAuth from "./telegram/page";
 
 type AuthMethod = "email" | "telegram";
 
