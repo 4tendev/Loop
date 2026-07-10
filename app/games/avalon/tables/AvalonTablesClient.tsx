@@ -64,7 +64,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
     <main
       className={
         isTableView
-          ? "h-full overflow-hidden bg-[#171411] text-base-content sm:bg-base-200 sm:px-6 sm:py-6 lg:px-8"
+          ? "h-full overflow-hidden bg-base-200 text-base-content sm:px-6 sm:py-6 lg:px-8"
           : "min-h-full bg-base-200 px-4 py-8 text-base-content sm:px-6 lg:px-8"
       }
       dir="rtl"
@@ -77,7 +77,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
         <section
           className={
             isTableView
-              ? "relative h-full min-h-0 overflow-hidden bg-[#171411] shadow-sm sm:rounded-lg sm:border sm:border-base-300 sm:bg-base-100"
+              ? "relative h-full min-h-0 overflow-hidden bg-base-200 shadow-sm sm:rounded-lg sm:border sm:border-base-300 sm:bg-base-100"
               : "rounded-lg border border-base-300 bg-base-100 shadow-sm"
           }
         >
@@ -120,7 +120,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               <div
                 className={
                   isTableView
-                    ? "flex h-full items-center justify-center bg-[#171411] text-stone-100"
+                    ? "flex h-full items-center justify-center bg-base-200 text-base-content"
                     : "flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200"
                 }
               >
@@ -132,7 +132,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               <div
                 className={
                   isTableView
-                    ? "flex h-full items-center justify-center bg-[#171411] px-4 text-center text-sm text-stone-300"
+                    ? "flex h-full items-center justify-center bg-base-200 px-4 text-center text-sm text-base-content/70"
                     : "flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200 px-4 text-center text-sm text-base-content/60"
                 }
               >

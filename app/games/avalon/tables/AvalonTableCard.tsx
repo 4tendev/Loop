@@ -387,16 +387,16 @@ export function AvalonTableCard({
       top: `${50 + Math.sin(radians) * radius}%`,
     } as CSSProperties;
     const seatTone = isSelectedForTeam
-      ? "border-emerald-300 bg-emerald-500 text-emerald-950 shadow-emerald-400/40"
+      ? "border-success bg-success text-success-content shadow-success/30"
       : isSelectedForLadyTarget
-        ? "border-sky-300 bg-sky-500 text-sky-950 shadow-sky-400/40"
+        ? "border-info bg-info text-info-content shadow-info/30"
         : isSelectedForAssassinTarget
-          ? "border-red-300 bg-red-600 text-white shadow-red-500/40"
+          ? "border-error bg-error text-error-content shadow-error/30"
           : selectedSeatId === seat.id
-            ? "border-amber-200 bg-amber-400 text-stone-950 shadow-amber-300/40"
+            ? "border-warning bg-warning text-warning-content shadow-warning/30"
             : seat.player
-              ? "border-stone-600 bg-stone-950 text-stone-100"
-              : "border-stone-500 bg-stone-800 text-stone-300";
+              ? "border-base-300 bg-base-100 text-base-content"
+              : "border-base-300 bg-base-200 text-base-content/70";
     const displayName = seat.player
       ? Array.from(seat.player.name).slice(0, 10).join("")
       : "";
@@ -419,7 +419,7 @@ export function AvalonTableCard({
         }
         className={`absolute z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-bold shadow-lg transition sm:h-14 sm:w-14 ${seatTone} ${
           canToggleTeamSeat || canSelectLadyTarget || canSelectAssassinTarget
-            ? "ring-2 ring-amber-200/70"
+            ? "ring-2 ring-warning/70"
             : ""
         }`}
         key={seat.id}
@@ -447,7 +447,7 @@ export function AvalonTableCard({
         type="button"
         style={seatStyle}
       >
-        <span className="pointer-events-none absolute left-1/2 top-0 flex h-4 min-w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-300/40 bg-stone-950/90 px-1 text-[0.6rem] font-black leading-none text-amber-100 shadow">
+        <span className="pointer-events-none absolute left-1/2 top-0 flex h-4 min-w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-warning/40 bg-base-100/90 px-1 text-[0.6rem] font-black leading-none text-warning shadow">
           {seat.number}
         </span>
         {seat.player ? (
@@ -457,7 +457,7 @@ export function AvalonTableCard({
               className="h-9 w-9 rounded-full object-cover sm:h-11 sm:w-11"
               src={seatImage}
             />
-            <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.125rem)] max-w-20 -translate-x-1/2 rounded bg-stone-950/80 px-1 text-[0.55rem] font-bold leading-4 text-stone-100 shadow">
+            <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.125rem)] max-w-20 -translate-x-1/2 rounded bg-base-100/85 px-1 text-[0.55rem] font-bold leading-4 text-base-content shadow">
               {displayName}
             </span>
           </>
@@ -473,7 +473,7 @@ export function AvalonTableCard({
   if (isTableView && isCreator && game.status === "lobby") {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-emerald-500 px-2 py-2 text-xs font-bold text-emerald-950 shadow-lg shadow-emerald-950/30 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-success px-2 py-2 text-xs font-bold text-success-content shadow-lg shadow-success/25 disabled:opacity-45"
         disabled={
           !isFull ||
           startingGameId === game.id ||
@@ -491,7 +491,7 @@ export function AvalonTableCard({
         <span>شروع</span>
       </button>,
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-red-400/50 bg-red-950/80 px-2 py-2 text-xs font-bold text-red-100 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-error/50 bg-error px-2 py-2 text-xs font-bold text-error-content disabled:opacity-45"
         disabled={cancellingGameId === game.id || connectionStatus !== "connected"}
         key="cancel"
         onClick={() => onCancelGame(game.id)}
@@ -510,7 +510,7 @@ export function AvalonTableCard({
   if (isTableView && game.status === "lobby" && ownSeat) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-amber-400 px-2 py-2 text-xs font-bold text-stone-950 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-warning px-2 py-2 text-xs font-bold text-warning-content disabled:opacity-45"
         disabled={
           !selectedSeat ||
           pendingSeatGameId === game.id ||
@@ -524,7 +524,7 @@ export function AvalonTableCard({
         <span>تغییر</span>
       </button>,
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-stone-500 bg-stone-900 px-2 py-2 text-xs font-bold text-stone-100 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-base-content/25 bg-base-100 px-2 py-2 text-xs font-bold text-base-content disabled:opacity-45"
         disabled={pendingSeatGameId === game.id || connectionStatus !== "connected"}
         key="leave-seat"
         onClick={() => onLeaveSeat(game.id)}
@@ -539,7 +539,7 @@ export function AvalonTableCard({
   if (isTableView && game.status === "lobby" && !ownSeat) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-amber-400 px-2 py-2 text-xs font-bold text-stone-950 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-warning px-2 py-2 text-xs font-bold text-warning-content disabled:opacity-45"
         disabled={
           !selectedSeat ||
           pendingSeatGameId === game.id ||
@@ -562,7 +562,7 @@ export function AvalonTableCard({
   if (actionRequired?.type === "avalon.nightCheck") {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-sky-400 px-2 py-2 text-xs font-bold text-sky-950 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-info px-2 py-2 text-xs font-bold text-info-content disabled:opacity-45"
         disabled={connectionStatus !== "connected"}
         key="night-check"
         onClick={() => onNightAlreadyCheck(game.id, actionRequired.id)}
@@ -577,7 +577,7 @@ export function AvalonTableCard({
   if (actionRequired?.type === "avalon.questDecision") {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-emerald-500 px-2 py-2 text-xs font-bold text-emerald-950 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-success px-2 py-2 text-xs font-bold text-success-content disabled:opacity-45"
         disabled={
           pendingDecisionQuestId === actionRequired.id ||
           connectionStatus !== "connected"
@@ -590,7 +590,7 @@ export function AvalonTableCard({
         <span>تایید</span>
       </button>,
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-red-600 px-2 py-2 text-xs font-bold text-white disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-error px-2 py-2 text-xs font-bold text-error-content disabled:opacity-45"
         disabled={
           pendingDecisionQuestId === actionRequired.id ||
           connectionStatus !== "connected"
@@ -614,8 +614,8 @@ export function AvalonTableCard({
           <button
             className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-xs font-bold disabled:opacity-45 ${
               isSuccessVote
-                ? "bg-emerald-500 text-emerald-950"
-                : "bg-red-600 text-white"
+                ? "bg-success text-success-content"
+                : "bg-error text-error-content"
             }`}
             disabled={
               pendingMissionVoteId === actionRequired.id ||
@@ -636,7 +636,7 @@ export function AvalonTableCard({
   if (isTableView && isNominationMode && nominationQuestId) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-emerald-500 px-2 py-2 text-xs font-bold text-emerald-950 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-success px-2 py-2 text-xs font-bold text-success-content disabled:opacity-45"
         disabled={
           selectedTeamSeatIds.length !== teamSlotCount ||
           pendingNominationQuestId === nominationQuestId ||
@@ -657,7 +657,7 @@ export function AvalonTableCard({
   if (isTableView && isLadyTargetMode && ladyCheckId) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-sky-400 px-2 py-2 text-xs font-bold text-sky-950 disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-info px-2 py-2 text-xs font-bold text-info-content disabled:opacity-45"
         disabled={
           !selectedLadyTargetSeatId ||
           pendingLadyTargetId === ladyCheckId ||
@@ -676,7 +676,7 @@ export function AvalonTableCard({
   if (isTableView && isAssassinTargetMode && assassinationId) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-red-600 px-2 py-2 text-xs font-bold text-white disabled:opacity-45"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-error px-2 py-2 text-xs font-bold text-error-content disabled:opacity-45"
         disabled={
           !selectedAssassinTargetSeatId ||
           pendingAssassinActionId === assassinationId ||
@@ -707,18 +707,15 @@ export function AvalonTableCard({
     <article
       className={
         isTableView
-          ? "relative flex h-full min-h-0 flex-col overflow-hidden bg-[#171411] text-stone-100 sm:rounded-lg sm:border sm:border-amber-900/40"
+          ? "relative flex h-full min-h-0 flex-col overflow-hidden bg-base-200 text-base-content sm:rounded-lg sm:border sm:border-base-300"
           : "rounded-lg border border-base-300 bg-base-200 p-4"
       }
     >
       {isTableView ? (
         <>
           <div className="shrink-0 px-3 pt-2">
-            <div className="rounded-md border border-amber-300/30 bg-stone-950/80 px-3 py-2 text-center shadow-lg">
-              <span className="block text-[0.65rem] font-bold text-amber-200">
-                پیام عمومی
-              </span>
-              <p className="truncate text-xs text-stone-100">
+            <div className="rounded-md border border-base-content/15 bg-base-100/80 px-3 py-2 text-center shadow-lg">
+              <p className="truncate text-sm font-medium text-base-content">
                 {game.publicMessage || "پیام عمومی ثبت نشده"}
               </p>
             </div>
@@ -726,9 +723,9 @@ export function AvalonTableCard({
 
           <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-2">
             <div className="relative inline-block aspect-square h-full max-h-[25rem] max-w-full">
-              <div className="absolute inset-[16%] rounded-full border border-amber-700/60 bg-[radial-gradient(circle_at_50%_38%,#5c3a1f,#2a1c14_65%,#15110f)] shadow-2xl shadow-black/60" />
-              <div className="absolute inset-[24%] rounded-full border border-amber-300/20 bg-stone-950/60" />
-              <div className="absolute left-1/2 top-1/2 z-10 h-[32%] w-[50%] -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute inset-[16%] rounded-full border border-primary/35 bg-[radial-gradient(circle_at_50%_38%,_var(--color-base-100),_var(--color-base-200)_65%,_var(--color-base-300))] shadow-2xl shadow-base-content/20" />
+              <div className="absolute inset-[24%] rounded-full border border-base-content/15 bg-base-100/60" />
+              <div className="absolute left-1/2 top-[53%] z-10 h-[32%] w-[50%] -translate-x-1/2 -translate-y-1/2">
                 <svg
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
@@ -737,7 +734,8 @@ export function AvalonTableCard({
                 >
                   <polyline
                     points="16 18 50 18 84 18 34 78 66 78"
-                    stroke="rgba(251, 191, 36, 0.55)"
+                    stroke="var(--color-warning)"
+                    opacity="0.6"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth="3.5"
@@ -754,10 +752,10 @@ export function AvalonTableCard({
                       : "";
                   const resultClasses =
                     missionResult?.result === "succeeded"
-                      ? "border-emerald-300 bg-emerald-500 text-emerald-950"
+                      ? "border-success bg-success text-success-content"
                       : missionResult?.result === "failed"
-                        ? "border-red-300 bg-red-600 text-white"
-                        : "border-amber-500/50 bg-stone-900 text-amber-100";
+                        ? "border-error bg-error text-error-content"
+                        : "border-warning/50 bg-base-100 text-warning";
 
                   return (
                     <div
@@ -766,7 +764,7 @@ export function AvalonTableCard({
                       title={`ماموریت ${round}: ${rule.players} نفر`}
                       style={missionPathPositions[index]}
                     >
-                      <span className="absolute left-1/2 top-0 flex h-3 min-w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-500/70 bg-stone-900 px-0.5 text-[0.45rem] font-bold leading-none text-amber-100">
+                      <span className="absolute left-1/2 top-0 flex h-3 min-w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-warning/70 bg-base-100 px-0.5 text-[0.45rem] font-bold leading-none text-warning">
                         {round}
                       </span>
                       {!missionResult?.result ? (
@@ -775,7 +773,7 @@ export function AvalonTableCard({
                         </span>
                       ) : null}
                       {failMarks ? (
-                        <span className="text-xs font-black leading-none text-red-400 sm:text-sm">
+                        <span className="text-xs font-black leading-none text-error sm:text-sm">
                           {failMarks}
                         </span>
                       ) : null}
@@ -788,20 +786,20 @@ export function AvalonTableCard({
             </div>
           </div>
 
-          <div className="z-30 shrink-0 border-t border-amber-300/20 bg-stone-950/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-black">
+          <div className="z-30 shrink-0 border-t border-base-content/15 bg-base-100/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-base-content/20">
             <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-2">
-              <span className="rounded-md border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-black text-amber-100">
+              <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-black text-warning">
                 {game.occupiedSeatCount}/{game.config.playerCount}
               </span>
-              <span className="truncate text-xs text-stone-300">
+              <span className="truncate text-xs text-base-content/70">
                 {latestPhase ? phaseLabels[latestPhase.type] : statusLabels[game.status]}
               </span>
               <img
                 alt="Oberon"
                 className={`h-7 w-7 rounded-full border object-cover ${
                   game.config.useOberon
-                    ? "border-red-300 opacity-100"
-                    : "border-stone-700 opacity-35 grayscale"
+                    ? "border-error opacity-100"
+                    : "border-base-content/20 opacity-35 grayscale"
                 }`}
                 src="/avalon/avalon_characters/Oberon.png"
                 title="Oberon"
@@ -810,8 +808,8 @@ export function AvalonTableCard({
                 alt="Lady of the Lake"
                 className={`h-7 w-7 rounded-full border object-cover ${
                   game.config.useLadyOfTheLake
-                    ? "border-sky-300 opacity-100"
-                    : "border-stone-700 opacity-35 grayscale"
+                    ? "border-info opacity-100"
+                    : "border-base-content/20 opacity-35 grayscale"
                 }`}
                 src="/avalon/avalon_characters/LadyOfTheLake.png"
                 title="Lady of the Lake"
@@ -819,8 +817,8 @@ export function AvalonTableCard({
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black ${
                   game.config.roleExposing
-                    ? "border-amber-300 bg-amber-300 text-stone-950"
-                    : "border-stone-700 bg-stone-900 text-stone-500"
+                    ? "border-warning bg-warning text-warning-content"
+                    : "border-base-content/20 bg-base-200 text-base-content/40"
                 }`}
                 title="Role exposing"
               >
@@ -832,12 +830,12 @@ export function AvalonTableCard({
               <div
                 className={`mb-2 flex items-center justify-between rounded-md border px-3 py-2 text-xs font-bold ${
                   latestLadyReveal.targetSide === "good"
-                    ? "border-emerald-300/40 bg-emerald-950/60 text-emerald-100"
-                    : "border-red-300/40 bg-red-950/60 text-red-100"
+                    ? "border-success/40 bg-success/15 text-success"
+                    : "border-error/40 bg-error/15 text-error"
                 }`}
               >
                 <span>صندلی {latestLadyReveal.targetSeatNumber}</span>
-                <span className="rounded-full bg-stone-950/45 px-2 py-0.5">
+                <span className="rounded-full bg-base-content/10 px-2 py-0.5">
                   {latestLadyReveal.targetSide === "good"
                     ? "تیم خیر"
                     : "تیم شر"}
@@ -845,8 +843,8 @@ export function AvalonTableCard({
               </div>
             ) : null}
 
-            <div className="mb-2 rounded-md border border-sky-300/25 bg-sky-950/40 px-3 py-2">
-              <p className="line-clamp-2 text-xs leading-5 text-stone-100">
+            <div className="mb-2 rounded-md border border-info/25 bg-info/10 px-3 py-2">
+              <p className="line-clamp-2 text-xs leading-5 text-base-content">
                 {privateMessage || "پیامی ندارید"}
               </p>
             </div>
@@ -855,7 +853,7 @@ export function AvalonTableCard({
               {actionButtons.length > 0 ? (
                 actionButtons
               ) : (
-                <div className="flex min-h-14 flex-1 items-center justify-center rounded-md border border-stone-700 bg-stone-900 text-xs text-stone-400">
+                <div className="flex min-h-14 flex-1 items-center justify-center rounded-md border border-base-content/20 bg-base-200 text-xs text-base-content/55">
                   اقدامی لازم نیست
                 </div>
               )}
