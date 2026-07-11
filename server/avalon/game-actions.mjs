@@ -1868,7 +1868,7 @@ export async function chooseAvalonAssassinationTarget(
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "Assassin cannot choose an evil-side seat. Please choose another target.",
+        message: "اساسین از تیم شر نمی تواند انتخاب کند.",
       };
     }
 
