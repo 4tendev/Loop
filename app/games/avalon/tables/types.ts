@@ -50,6 +50,8 @@ export type AvalonWsPhase = {
     kingSeatNumber: number;
     kingPlayerName: string | null;
     teamMemberCount: number;
+    teamMemberSeatIds: string[];
+    teamMemberSeatNumbers: number[];
     teamSlotCount: number;
     decisionCount: number;
   } | null;

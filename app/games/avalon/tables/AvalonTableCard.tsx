@@ -236,6 +236,17 @@ export function AvalonTableCard({
     missionPhaseResults.map((mission) => [mission.round, mission]),
   );
   const latestPhase = game.phases.find((phase) => phase.endedAt === null);
+  const latestQuest =
+    game.phases
+      .slice()
+      .reverse()
+      .find((phase) => phase.quest)?.quest ?? null;
+  const lastKingSeatNumber = latestQuest?.kingSeatNumber ?? null;
+  const activeQuest =
+    latestPhase?.type === "quest" ? (latestPhase.quest ?? null) : null;
+  const activeQuestTeamSeatNumbers = new Set(
+    activeQuest?.teamMemberSeatNumbers ?? [],
+  );
   const latestLadyReveal =
     game.phases
       .slice()
@@ -277,7 +288,10 @@ export function AvalonTableCard({
     seat: AvalonWsSeat,
     position: "top" | "right" | "bottom" | "left",
   ) {
+    const isOwnSeat = ownSeat?.id === seat.id;
     const isSelectedForTeam = selectedTeamSeatIds.includes(seat.id);
+    const isMateSeat =
+      isSelectedForTeam || activeQuestTeamSeatNumbers.has(seat.number);
     const isSelectedForLadyTarget = selectedLadyTargetSeatId === seat.id;
     const isSelectedForAssassinTarget =
       selectedAssassinTargetSeatId === seat.id;
@@ -327,6 +341,10 @@ export function AvalonTableCard({
                     ? "border-base-300 bg-base-100 hover:border-success hover:bg-success/10"
                     : "border-base-300 bg-base-100"
                   : "border-base-300 bg-base-100 hover:border-primary hover:bg-primary/10"
+          } ${
+            isOwnSeat
+              ? "outline outline-2 outline-offset-2 outline-primary shadow-primary/40"
+              : ""
           }`}
           onClick={() => {
             if (canToggleTeamSeat && nominationQuestId) {
@@ -351,6 +369,19 @@ export function AvalonTableCard({
           title={seat.player?.name ?? "صندلی خالی"}
           type="button"
         >
+          {isOwnSeat ? (
+            <span className="pointer-events-none absolute -right-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-primary/50 bg-primary px-1.5 py-0.5 text-[0.55rem] font-black uppercase leading-none text-primary-content shadow">
+              شما
+            </span>
+          ) : null}
+          {isMateSeat ? (
+            <img
+              alt="Selected teammate"
+              className="pointer-events-none absolute -right-2 bottom-0 z-20 h-7 w-7 translate-y-1/2 rounded-full border border-success/50 bg-base-100 object-cover p-0.5 shadow-lg"
+              src="/avalon/Mate.png"
+              title={`Seat ${seat.number}`}
+            />
+          ) : null}
           {seat.player ? (
             <img
               alt={seat.player.name}
@@ -366,7 +397,10 @@ export function AvalonTableCard({
   }
 
   function renderCouncilSeat(seat: AvalonWsSeat) {
+    const isOwnSeat = ownSeat?.id === seat.id;
     const isSelectedForTeam = selectedTeamSeatIds.includes(seat.id);
+    const isMateSeat =
+      isSelectedForTeam || activeQuestTeamSeatNumbers.has(seat.number);
     const isSelectedForLadyTarget = selectedLadyTargetSeatId === seat.id;
     const isSelectedForAssassinTarget =
       selectedAssassinTargetSeatId === seat.id;
@@ -386,6 +420,21 @@ export function AvalonTableCard({
       left: `${50 + Math.cos(radians) * radius}%`,
       top: `${50 + Math.sin(radians) * radius}%`,
     } as CSSProperties;
+    const isLastKing = lastKingSeatNumber === seat.number;
+    const inwardX = -Math.cos(radians);
+    const inwardY = -Math.sin(radians);
+    const kingMarkerDistance = isMateSeat ? 2.7 : 2.7;
+    const mateMarkerDistance = isLastKing ?3.5 : 2.7;
+    const kingMarkerStyle = {
+      transform: "translate(-50%, -50%)",
+      left: `calc(50% + ${(inwardX * kingMarkerDistance).toFixed(3)}rem)`,
+      top: `calc(50% + ${(inwardY * kingMarkerDistance).toFixed(3)}rem)`,
+    } as CSSProperties;
+    const mateMarkerStyle = {
+      transform: "translate(-50%, -50%)",
+      left: `calc(50% + ${(inwardX * mateMarkerDistance).toFixed(3)}rem)`,
+      top: `calc(50% + ${(inwardY * mateMarkerDistance).toFixed(3)}rem)`,
+    } as CSSProperties;
     const seatTone = isSelectedForTeam
       ? "border-success bg-success text-success-content shadow-success/30"
       : isSelectedForLadyTarget
@@ -400,6 +449,10 @@ export function AvalonTableCard({
     const displayName = seat.player
       ? Array.from(seat.player.name).slice(0, 10).join("")
       : "";
+    const displayNamePosition =
+      seat.number === 1
+        ? "bottom-[calc(100%+0.6rem)]"
+        : "top-[calc(100%+0.125rem)]";
     const roleImage = seat.role ? roleImageByName[seat.role] : null;
     const seatImage =
       isTerminalGame && roleImage
@@ -420,6 +473,10 @@ export function AvalonTableCard({
         className={`absolute z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-bold shadow-lg transition sm:h-14 sm:w-14 ${seatTone} ${
           canToggleTeamSeat || canSelectLadyTarget || canSelectAssassinTarget
             ? "ring-2 ring-warning/70"
+            : ""
+        } ${
+          isOwnSeat
+            ? "outline outline-2 outline-offset-2 outline-primary shadow-primary/40"
             : ""
         }`}
         key={seat.id}
@@ -450,6 +507,29 @@ export function AvalonTableCard({
         <span className="pointer-events-none absolute left-1/2 top-0 flex h-4 min-w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-warning/40 bg-base-100/90 px-1 text-[0.6rem] font-black leading-none text-warning shadow">
           {seat.number}
         </span>
+        {isOwnSeat ? (
+          <span className="pointer-events-none absolute -right-3 top-1/4 z-20 -translate-y-1/2 rounded-full border border-primary/50 bg-primary px-0.5 py-0.5 text-[0.55rem] font-black uppercase leading-none text-primary-content shadow sm:-right-4">
+            شما
+          </span>
+        ) : null}
+        {isLastKing ? (
+          <img
+            alt="Last king"
+            className="pointer-events-none absolute z-30 h-7 w-7 rounded-full border border-warning/50 bg-base-100 object-cover p-0.5 shadow-lg sm:h-8 sm:w-8"
+            src="/avalon/King.png"
+            style={kingMarkerStyle}
+            title={latestQuest?.kingPlayerName ?? `Seat ${seat.number}`}
+          />
+        ) : null}
+        {isMateSeat ? (
+          <img
+            alt="Selected teammate"
+            className="pointer-events-none absolute z-30 h-7 w-7 rounded-full border border-success/50 bg-base-100 object-cover p-0.5 shadow-lg sm:h-8 sm:w-8"
+            src="/avalon/Mate.png"
+            style={mateMarkerStyle}
+            title={`Seat ${seat.number}`}
+          />
+        ) : null}
         {seat.player ? (
           <>
             <img
@@ -457,7 +537,9 @@ export function AvalonTableCard({
               className="h-9 w-9 rounded-full object-cover sm:h-11 sm:w-11"
               src={seatImage}
             />
-            <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.125rem)] max-w-20 -translate-x-1/2 rounded bg-base-100/85 px-1 text-[0.55rem] font-bold leading-4 text-base-content shadow">
+            <span
+              className={`pointer-events-none absolute left-1/2 max-w-20 -translate-x-1/2 truncate whitespace-nowrap rounded bg-base-100/85 px-1 text-[0.55rem] font-bold leading-4 text-base-content shadow ${displayNamePosition}`}
+            >
               {displayName}
             </span>
           </>

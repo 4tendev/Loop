@@ -62,6 +62,26 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
                     WHERE team_member.quest_id = quest.id
                       AND team_member.seat_id IS NOT NULL
                   ),
+                  'teamMemberSeatIds', COALESCE(
+                    (
+                      SELECT json_agg(team_member_seat.id ORDER BY team_member_seat.number)
+                      FROM avalon_quest_team_members team_member
+                      INNER JOIN avalon_seats team_member_seat
+                        ON team_member_seat.id = team_member.seat_id
+                      WHERE team_member.quest_id = quest.id
+                    ),
+                    '[]'::json
+                  ),
+                  'teamMemberSeatNumbers', COALESCE(
+                    (
+                      SELECT json_agg(team_member_seat.number ORDER BY team_member_seat.number)
+                      FROM avalon_quest_team_members team_member
+                      INNER JOIN avalon_seats team_member_seat
+                        ON team_member_seat.id = team_member.seat_id
+                      WHERE team_member.quest_id = quest.id
+                    ),
+                    '[]'::json
+                  ),
                   'teamSlotCount', (
                     SELECT count(*)
                     FROM avalon_quest_team_members team_member
