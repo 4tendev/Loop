@@ -2,10 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import DeviceAuth from "./device/page";
 import EmailAuth from "./email/page";
 import TelegramAuth from "./telegram/page";
 
-type AuthMethod = "email" | "telegram";
+type AuthMethod = "email" | "telegram" | "device";
 
 type AuthClientProps = {
   telegramAuthOrigin: string;
@@ -34,7 +35,7 @@ export default function AuthClient({
               </p>
             </div>
 
-            <div dir="ltr"  className="join grid grid-cols-2">
+            <div dir="ltr" className="join grid grid-cols-3">
               <button
                 className={`btn join-item ${method === "email" ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setMethod("email")}
@@ -49,15 +50,24 @@ export default function AuthClient({
               >
                 تلگرام
               </button>
+              <button
+                className={`btn join-item ${method === "device" ? "btn-primary" : "btn-outline"}`}
+                onClick={() => setMethod("device")}
+                type="button"
+              >
+                دستگاه
+              </button>
             </div>
 
             {method === "email" ? (
               <EmailAuth embedded />
-            ) : (
+            ) : method === "telegram" ? (
               <TelegramAuth
                 authOrigin={telegramAuthOrigin}
                 botUsername={telegramBotUsername}
               />
+            ) : (
+              <DeviceAuth />
             )}
 
             {telegramError ? (

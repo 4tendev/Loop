@@ -36,7 +36,7 @@ async function preprocessProfileImage(file: File) {
       image.src = objectUrl;
     });
 
-    const size = 1280;
+    const size = 400;
     const sourceSize = Math.max(1, Math.min(image.width, image.height));
     const sourceX = Math.max(0, Math.floor((image.width - sourceSize) / 2));
     const sourceY = Math.max(0, Math.floor((image.height - sourceSize) / 2));

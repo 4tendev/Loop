@@ -2,7 +2,7 @@ export const userTypes = ["member", "admin"] as const;
 
 export type UserType = (typeof userTypes)[number];
 
-export const authProviders = ["email", "google", "telegram"] as const;
+export const authProviders = ["email", "google", "telegram", "device"] as const;
 
 export type AuthProvider = (typeof authProviders)[number];
 
