@@ -97,51 +97,7 @@ function formatAvalonSeatList(
 }
 
 function buildAvalonNightPrivateMessage(seat, seats, roleExposing) {
-  const messageParts = [
-    `نقش شما: ${AVALON_ROLE_LABELS[seat.role] ?? seat.role}.`,
-  ];
-
-  if (seat.role === "merlin") {
-    const visibleEvilSeats = seats.filter((otherSeat) =>
-      ["assassin", "morgana", "oberon"].includes(otherSeat.role),
-    );
-
-    messageParts.push(
-      `بازیکنان سمت شر که می‌بینی، بدون نقش دقیق: ${formatAvalonSeatList(
-        visibleEvilSeats,
-        { showSide: true },
-      )}.`,
-    );
-  }
-
-  if (seat.role === "percival") {
-    const visibleMysterySeats = seats.filter((otherSeat) =>
-      ["merlin", "morgana"].includes(otherSeat.role),
-    );
-
-    messageParts.push(
-      `بازیکنان مهمی که می‌بینی، بدون مشخص شدن نقش یا سمت: ${formatAvalonSeatList(
-        visibleMysterySeats,
-      )}.`,
-    );
-  }
-
-  if (["mordred", "morgana", "assassin"].includes(seat.role)) {
-    const evilMateSeats = seats.filter(
-      (otherSeat) =>
-        otherSeat.id !== seat.id &&
-        AVALON_VISIBLE_EVIL_MATE_ROLES.has(otherSeat.role),
-    );
-
-    messageParts.push(
-      `یاران سمت شر شما: ${formatAvalonSeatList(evilMateSeats, {
-        showSide: true,
-        showRole: roleExposing,
-      })}.`,
-    );
-  }
-
-  return messageParts.join(" ");
+  return ("اطلاعات شب رو بررسی کنید");
 }
 
 function getAvalonMissionRule(playerCount, targetMissionRound) {
@@ -1905,6 +1861,14 @@ export async function chooseAvalonAssassinationTarget(
       return {
         ok: false,
         message: "فقط اساسین می‌تواند هدف معتبر برای مرلین انتخاب کند",
+      };
+    }
+
+    if (AVALON_EVIL_ROLES.has(assassination.targetRole)) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        message: "Assassin cannot choose an evil-side seat. Please choose another target.",
       };
     }
 

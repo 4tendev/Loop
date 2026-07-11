@@ -9,6 +9,13 @@ import {
   avalonTableActionTypes,
 } from "./table-actions.mjs";
 
+const AVALON_EVIL_ROLES = new Set(["assassin", "morgana", "mordred", "oberon"]);
+const AVALON_VISIBLE_EVIL_MATE_ROLES = new Set([
+  "assassin",
+  "morgana",
+  "mordred",
+]);
+
 export function createAvalonWebSocketGateway({
   actions,
   clients,
@@ -165,12 +172,23 @@ export function createAvalonWebSocketGateway({
     const ownSeat = getOwnSeat(game, user);
     const canSeeOwnRole = game.startedAt !== null && ownSeat?.role;
     const canSeeAllRoles = game.status === "completed" && game.winnerSide !== null;
+    const canSeeEvilRoles =
+      game.status === "inProgress" &&
+      game.phases.some(
+        (phase) => phase.type === "assassination" && phase.endedAt === null,
+      );
 
     return {
       ...game,
-      phases: game.phases.map((phase) => sanitizePhaseForClient(phase, ownSeat)),
+      phases: game.phases.map((phase) =>
+        sanitizePhaseForClient(phase, ownSeat, game),
+      ),
       seats: game.seats.map(({ privateMessage, actionRequired, role, ...seat }) => {
-        if (canSeeAllRoles || (canSeeOwnRole && seat.id === ownSeat.id)) {
+        if (
+          canSeeAllRoles ||
+          (canSeeEvilRoles && AVALON_EVIL_ROLES.has(role)) ||
+          (canSeeOwnRole && seat.id === ownSeat.id)
+        ) {
           return {
             ...seat,
             role,
@@ -182,24 +200,101 @@ export function createAvalonWebSocketGateway({
     };
   }
 
-  function sanitizePhaseForClient(phase, ownSeat) {
-    if (!phase.ladyCheck?.targetSide) {
-      return phase;
+  function sanitizePhaseForClient(phase, ownSeat, game) {
+    const sanitizedPhase = phase.night
+      ? {
+          ...phase,
+          night: {
+            ...phase.night,
+            summary: buildNightSummaryForSeat(ownSeat, game),
+          },
+        }
+      : phase;
+
+    if (!sanitizedPhase.ladyCheck?.targetSide) {
+      return sanitizedPhase;
     }
 
     const canSeeTargetSide =
-      phase.endedAt !== null && phase.ladyCheck.ladySeatId === ownSeat?.id;
+      sanitizedPhase.endedAt !== null &&
+      sanitizedPhase.ladyCheck.ladySeatId === ownSeat?.id;
 
     if (canSeeTargetSide) {
-      return phase;
+      return sanitizedPhase;
     }
 
-    const { targetSide, ...publicLadyCheck } = phase.ladyCheck;
+    const { targetSide, ...publicLadyCheck } = sanitizedPhase.ladyCheck;
 
     return {
-      ...phase,
+      ...sanitizedPhase,
       ladyCheck: publicLadyCheck,
     };
+  }
+
+  function buildNightSummaryForSeat(ownSeat, game) {
+    if (!ownSeat?.role || game.startedAt === null) {
+      return null;
+    }
+
+    const summary = {
+      ownSeatId: ownSeat.id,
+      ownSeatNumber: ownSeat.number,
+      ownRole: ownSeat.role,
+      revealSeats: [],
+    };
+
+    if (ownSeat.role === "merlin") {
+      summary.revealSeats = game.seats
+        .filter((seat) =>
+          ["assassin", "morgana", "oberon"].includes(seat.role),
+        )
+        .map((seat) => createNightRevealSeat(seat, { side: "evil" }));
+
+      return summary;
+    }
+
+    if (ownSeat.role === "percival") {
+      summary.revealSeats = game.seats
+        .filter((seat) => ["merlin", "morgana"].includes(seat.role))
+        .map((seat) => createNightRevealSeat(seat));
+
+      return summary;
+    }
+
+    if (AVALON_VISIBLE_EVIL_MATE_ROLES.has(ownSeat.role)) {
+      summary.revealSeats = game.seats
+        .filter(
+          (seat) =>
+            seat.id !== ownSeat.id &&
+            AVALON_VISIBLE_EVIL_MATE_ROLES.has(seat.role),
+        )
+        .map((seat) =>
+          createNightRevealSeat(seat, {
+            side: "evil",
+            role: game.config.roleExposing ? seat.role : undefined,
+          }),
+        );
+    }
+
+    return summary;
+  }
+
+  function createNightRevealSeat(seat, { side, role } = {}) {
+    const revealSeat = {
+      seatId: seat.id,
+      seatNumber: seat.number,
+      player: seat.player,
+    };
+
+    if (side) {
+      revealSeat.side = side;
+    }
+
+    if (role) {
+      revealSeat.role = role;
+    }
+
+    return revealSeat;
   }
 
   function handleClientMessage(socket, text) {

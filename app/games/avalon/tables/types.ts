@@ -2,6 +2,7 @@ import type { AvalonActionResult } from "@/types/avalon-action";
 import type {
   AvalonGameConfig,
   AvalonGameStatus,
+  AvalonQuestDecisionValue,
   AvalonRoleName,
   AvalonSide,
   AvalonSeatActionRequired,
@@ -45,6 +46,22 @@ export type AvalonWsPhase = {
   night: {
     checkedCount: number;
     totalCount: number;
+    summary: {
+      ownSeatId: string;
+      ownSeatNumber: number;
+      ownRole: AvalonRoleName;
+      revealSeats: {
+        seatId: string;
+        seatNumber: number;
+        player: {
+          id: string;
+          name: string;
+          profileImage: string;
+        } | null;
+        side?: AvalonSide;
+        role?: AvalonRoleName;
+      }[];
+    } | null;
   } | null;
   quest: {
     kingSeatNumber: number;
@@ -54,6 +71,17 @@ export type AvalonWsPhase = {
     teamMemberSeatNumbers: number[];
     teamSlotCount: number;
     decisionCount: number;
+    approveCount: number;
+    disapproveCount: number;
+    decisionVotes: {
+      id: string;
+      seatId: string;
+      seatNumber: number;
+      playerId: string | null;
+      playerName: string | null;
+      playerProfileImage: string | null;
+      decision: AvalonQuestDecisionValue;
+    }[];
   } | null;
   mission: {
     missionRound: number;

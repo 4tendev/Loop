@@ -72,8 +72,18 @@ type AvalonTableCardProps = {
 };
 
 const sideLabels = {
-  good: "Good",
-  evil: "Evil",
+  good: "خیر",
+  evil: "شر",
+} as const;
+
+const roleLabels = {
+  assassin: "اساسین",
+  merlin: "مرلین",
+  mordred: "موردرد",
+  morgana: "مورگانا",
+  oberon: "اوبرون",
+  percival: "پرسیوال",
+  servant: "خدمتگزار وفادار",
 } as const;
 
 const phaseLabels: Record<AvalonWsPhase["type"], string> = {
@@ -94,6 +104,13 @@ const roleImageByName = {
   percival: "/avalon/avalon_characters/Percival.png",
   servant: "/avalon/avalon_characters/LoyalServantOfArthur.png",
 } as const;
+
+const evilRoleNames = new Set<keyof typeof roleImageByName>([
+  "assassin",
+  "morgana",
+  "mordred",
+  "oberon",
+]);
 
 export function AvalonTableCard({
   game,
@@ -244,6 +261,7 @@ export function AvalonTableCard({
   const lastKingSeatNumber = latestQuest?.kingSeatNumber ?? null;
   const activeQuest =
     latestPhase?.type === "quest" ? (latestPhase.quest ?? null) : null;
+  const isAssassinationPhase = latestPhase?.type === "assassination";
   const activeQuestTeamSeatNumbers = new Set(
     activeQuest?.teamMemberSeatNumbers ?? [],
   );
@@ -252,6 +270,12 @@ export function AvalonTableCard({
       .slice()
       .reverse()
       .find((phase) => phase.ladyCheck?.targetSide)?.ladyCheck ?? null;
+  const latestNightSummary =
+    game.phases
+      .slice()
+      .reverse()
+      .find((phase) => phase.night?.summary)?.night?.summary ?? null;
+  const nightRevealSeats = latestNightSummary?.revealSeats ?? [];
   const missionVoteActionId =
     actionRequired?.type === "avalon.missionVote" ? actionRequired.id : null;
   const missionVoteOrder = useMemo(
@@ -304,6 +328,19 @@ export function AvalonTableCard({
       seat.id !== ownSeat?.id;
     const canSelectAssassinTarget =
       !isTerminalGame && isAssassinTargetMode && Boolean(seat.player);
+    const roleImage = seat.role ? roleImageByName[seat.role] : null;
+    const showRoleImage =
+      Boolean(roleImage) &&
+      (isTerminalGame ||
+        (isAssassinationPhase &&
+          Boolean(seat.role && evilRoleNames.has(seat.role))));
+    const seatImage = showRoleImage
+      ? (roleImage ?? getProfileImageSrc(seat.player?.profileImage))
+      : getProfileImageSrc(seat.player?.profileImage);
+    const seatImageAlt =
+      showRoleImage && seat.role
+        ? seat.role
+        : (seat.player?.name ?? `Seat ${seat.number}`);
     const connectorClasses = {
       top: "bottom-0 left-1/2 h-5 w-px -translate-x-1/2",
       right: "left-0 top-1/2 h-px w-5 -translate-y-1/2",
@@ -384,9 +421,9 @@ export function AvalonTableCard({
           ) : null}
           {seat.player ? (
             <img
-              alt={seat.player.name}
+              alt={seatImageAlt}
               className="h-10 w-10 rounded-full object-cover"
-              src={getProfileImageSrc(seat.player.profileImage)}
+              src={seatImage}
             />
           ) : (
             seat.number
@@ -454,12 +491,17 @@ export function AvalonTableCard({
         ? "bottom-[calc(100%+0.6rem)]"
         : "top-[calc(100%+0.125rem)]";
     const roleImage = seat.role ? roleImageByName[seat.role] : null;
+    const showRoleImage =
+      Boolean(roleImage) &&
+      (isTerminalGame ||
+        (isAssassinationPhase &&
+          Boolean(seat.role && evilRoleNames.has(seat.role))));
     const seatImage =
-      isTerminalGame && roleImage
-        ? roleImage
+      showRoleImage
+        ? (roleImage ?? getProfileImageSrc(seat.player?.profileImage))
         : getProfileImageSrc(seat.player?.profileImage);
     const seatImageAlt =
-      isTerminalGame && seat.role
+      showRoleImage && seat.role
         ? seat.role
         : (seat.player?.name ?? `صندلی ${seat.number}`);
 
@@ -924,6 +966,59 @@ export function AvalonTableCard({
                 </span>
               </div>
             ) : null}
+
+            <details
+              className="mb-2 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-xs"
+              open
+            >
+              <summary className="cursor-pointer select-none font-bold text-warning">
+                اطلاعات شب
+              </summary>
+              <div className="mt-2 grid gap-2">
+                {latestNightSummary ? (
+                  <div className="flex flex-wrap items-center gap-2 text-base-content/75">
+                    <span className="rounded-full bg-base-content/10 px-2 py-0.5 font-bold">
+                      صندلی {latestNightSummary.ownSeatNumber}
+                    </span>
+                    <span>نقش شما : {roleLabels[latestNightSummary.ownRole]}</span>
+                  </div>
+                ) : (
+                  <p className="text-base-content/60">
+                    اطلاعات شب برای صندلی شما وجود ندارد.
+                  </p>
+                )}
+
+                {nightRevealSeats.length > 0 ? (
+                  <div className="flex gap-0.5 ">
+                    {nightRevealSeats.map((seat) => (
+                      <div
+                        className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-base-content/10 bg-base-100/75 px-2 py-1.5"
+                        key={seat.seatId}
+                      >
+                        <div className="min-w-0">
+                          <span className="block truncate ">
+                            صندلی {seat.seatNumber}
+                            {seat.player?.name ? ` - ${seat.player.name}` : ""}
+                          </span>
+                          <span className="block truncate text-[0.65rem] text-base-content/55">
+                            {[
+                              seat.side ? sideLabels[seat.side] : null,
+                              seat.role ? roleLabels[seat.role] : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" / ") || "صندلی آشکارشده"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : latestNightSummary ? (
+                  <p className="text-base-content/60">
+                    برای این نقش صندلی دیگری آشکار نمی‌شود.
+                  </p>
+                ) : null}
+              </div>
+            </details>
 
             <div className="mb-2 rounded-md border border-info/25 bg-info/10 px-3 py-2">
               <p className="line-clamp-2 text-xs leading-5 text-base-content">

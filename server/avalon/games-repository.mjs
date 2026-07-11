@@ -91,6 +91,46 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
                     SELECT count(*)
                     FROM avalon_quest_decisions decision
                     WHERE decision.quest_id = quest.id
+                  ),
+                  'decisionVotes', CASE
+                    WHEN phase.ended_at IS NULL AND game.status = 'inProgress' THEN '[]'::json
+                    ELSE COALESCE(
+                      (
+                        SELECT json_agg(
+                          json_build_object(
+                            'id', decision.id,
+                            'seatId', decision_seat.id,
+                            'seatNumber', decision_seat.number,
+                            'playerId', decision_player.id,
+                            'playerName', decision_player.name,
+                            'playerProfileImage', decision_player.profile_image,
+                            'decision', decision.decision
+                          )
+                          ORDER BY decision_seat.number
+                        )
+                        FROM avalon_quest_decisions decision
+                        INNER JOIN avalon_seats decision_seat
+                          ON decision_seat.id = decision.seat_id
+                        LEFT JOIN users decision_player
+                          ON decision_player.id = decision_seat.player_id
+                        WHERE decision.quest_id = quest.id
+                      ),
+                      '[]'::json
+                    )
+                  END,
+                  'approveCount', (
+                    SELECT count(*)
+                    FROM avalon_quest_decisions decision
+                    WHERE
+                      decision.quest_id = quest.id
+                      AND decision.decision = 'approve'
+                  ),
+                  'disapproveCount', (
+                    SELECT count(*)
+                    FROM avalon_quest_decisions decision
+                    WHERE
+                      decision.quest_id = quest.id
+                      AND decision.decision = 'disapprove'
                   )
                 )
               END,
