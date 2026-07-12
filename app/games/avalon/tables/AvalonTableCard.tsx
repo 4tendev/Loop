@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
 import {
@@ -215,6 +215,57 @@ export function AvalonTableCard({
       .slice()
       .reverse()
       .find((phase) => phase.quest)?.quest ?? null;
+  const questDecisionReveal = useMemo(() => {
+    const questPhase = game.phases
+      .filter((phase) => phase.quest && phase.endedAt)
+      .sort(
+        (left, right) =>
+          new Date(right.endedAt ?? 0).getTime() -
+          new Date(left.endedAt ?? 0).getTime(),
+      )[0];
+
+    if (!questPhase?.endedAt || !questPhase.quest) return null;
+
+    const questEndedAt = new Date(questPhase.endedAt).getTime();
+    const nextPhase = game.phases
+      .filter((phase) => new Date(phase.createdAt).getTime() >= questEndedAt)
+      .sort(
+        (left, right) =>
+          new Date(left.createdAt).getTime() -
+          new Date(right.createdAt).getTime(),
+      )[0];
+
+    if (!nextPhase) return null;
+
+    return {
+      expiresAt: new Date(nextPhase.createdAt).getTime() + 20_000,
+      votes: new Map(
+        questPhase.quest.decisionVotes.map((vote) => [
+          vote.seatId,
+          vote.decision,
+        ]),
+      ),
+    };
+  }, [game.phases]);
+  const [decisionRevealNow, setDecisionRevealNow] = useState(0);
+
+  useEffect(() => {
+    setDecisionRevealNow(Date.now());
+    if (!questDecisionReveal) return;
+
+    const remaining = questDecisionReveal.expiresAt - Date.now();
+    if (remaining <= 0) return;
+
+    const timeout = window.setTimeout(
+      () => setDecisionRevealNow(Date.now()),
+      remaining + 25,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [questDecisionReveal]);
+  const revealedQuestDecisions =
+    questDecisionReveal && decisionRevealNow < questDecisionReveal.expiresAt
+      ? questDecisionReveal.votes
+      : null;
   const lastKingSeatNumber = latestQuest?.kingSeatNumber ?? null;
   const activeQuest =
     latestPhase?.type === "quest" ? (latestPhase.quest ?? null) : null;
@@ -281,6 +332,7 @@ export function AvalonTableCard({
     isAssassinationPhase,
     lastKingSeatNumber,
     lastKingPlayerName: latestQuest?.kingPlayerName,
+    revealedQuestDecisions,
     onSelectSeat,
     onToggleTeamSeat,
     onSelectLadyTarget,
@@ -715,16 +767,16 @@ export function AvalonTableCard({
                 )}
 
                 {nightRevealSeats.length > 0 ? (
-                  <div className="flex gap-0.5 ">
+                  <div className="flex gap-0.25 ">
                     {nightRevealSeats.map((seat) => (
                       <div
                         className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-base-content/10 bg-base-100/75 px-2 py-1.5"
                         key={seat.seatId}
                       >
                         <div className="min-w-0">
-                          <span className="block truncate ">
-                            صندلی {seat.seatNumber}
-                            {seat.player?.name ? ` - ${seat.player.name}` : ""}
+                          <span className="block truncate text-[0.6rem]">
+                             {seat.seatNumber}
+                            {seat.player?.name ? ` - ${seat.player.name.slice(0,12)}` : ""}
                           </span>
                           <span className="block truncate text-[0.65rem] text-base-content/55">
                             {[
