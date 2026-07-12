@@ -90,13 +90,7 @@ export type AvalonGameConfig = {
 };
 
 export const avalonMissionRulesByPlayerCount = {
-  6: [
-    { players: 2, minimumFailures: 1 },
-    { players: 3, minimumFailures: 1 },
-    { players: 4, minimumFailures: 1 },
-    { players: 3, minimumFailures: 1 },
-    { players: 4, minimumFailures: 1 },
-  ],
+
   7: [
     { players: 2, minimumFailures: 1 },
     { players: 3, minimumFailures: 1 },
