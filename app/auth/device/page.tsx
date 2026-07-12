@@ -32,7 +32,7 @@ function getOrCreateDeviceId() {
   return deviceId;
 }
 
-export default function DeviceAuth() {
+export default function DeviceAuth({ linking = false }: { linking?: boolean }) {
   const router = useRouter();
   const { setUser } = useUser();
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -65,6 +65,7 @@ export default function DeviceAuth() {
         body: JSON.stringify({
           deviceId,
           deviceName: getDeviceName(),
+          link: linking,
         }),
       });
       const result = (await response.json()) as DeviceLoginResponse;

@@ -79,7 +79,7 @@ export function isValidTelegramProviderUserId(providerUserId: string) {
   return /^\d+$/.test(providerUserId);
 }
 
-function createTelegramProviderUserId(id: string) {
+export function createTelegramProviderUserId(id: string) {
   const providerUserId = normalizeTelegramProviderUserId(id);
 
   if (!isValidTelegramProviderUserId(providerUserId)) {

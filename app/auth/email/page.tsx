@@ -23,6 +23,7 @@ type EmailLoginResponse = {
 
 type EmailAuthProps = {
   embedded?: boolean;
+  linking?: boolean;
 };
 
 function formatTimeLeft(timeLeftMs: number | null) {
@@ -33,7 +34,7 @@ function formatTimeLeft(timeLeftMs: number | null) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
+export default function EmailAuth({ embedded = false, linking = false }: EmailAuthProps = {}) {
   const router = useRouter();
   const { setUser } = useUser();
   const [email, setEmail] = useState("");
@@ -108,7 +109,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, code: loginCode }),
+        body: JSON.stringify({ email, code: loginCode, link: linking }),
       });
       const result = (await response.json()) as EmailLoginResponse;
 
@@ -166,14 +167,18 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
   const content = (
     <>
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">ورود با ایمیل</h2>
+        <h2 className="text-xl font-semibold">
+          {linking ? "افزودن ایمیل" : "ورود با ایمیل"}
+        </h2>
         <p className="text-sm text-base-content/70">
           {hasRequestedCode ? (
             <>
               کد ارسال‌شده به <bdi>{email}</bdi> را وارد کنید.
             </>
           ) : (
-            "یک کد یک‌بارمصرف به ایمیل شما ارسال می‌کنیم."
+            linking
+              ? "برای اتصال ایمیل، یک کد یک‌بارمصرف برای شما ارسال می‌کنیم."
+              : "یک کد یک‌بارمصرف به ایمیل شما ارسال می‌کنیم."
           )}
         </p>
       </div>
@@ -253,7 +258,7 @@ export default function EmailAuth({ embedded = false }: EmailAuthProps = {}) {
             {isSubmitting ? (
               <span className="loading loading-spinner loading-sm" />
             ) : null}
-            ورود
+            {linking ? "تأیید و افزودن ایمیل" : "ورود"}
           </button>
         </form>
       ) : null}

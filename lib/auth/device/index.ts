@@ -30,7 +30,7 @@ export function isValidDeviceProviderUserId(providerUserId: string) {
   );
 }
 
-function createDeviceProviderUserId(deviceId: string) {
+export function createDeviceProviderUserId(deviceId: string) {
   const providerUserId = deviceId.trim().toLowerCase();
 
   if (!isValidDeviceProviderUserId(providerUserId)) {

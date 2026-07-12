@@ -19,8 +19,14 @@ export default function AuthClient({
 }: AuthClientProps) {
   const searchParams = useSearchParams();
   const telegramError = searchParams.get("telegramError");
+  const linking = searchParams.get("link") === "1";
+  const requestedMethod = searchParams.get("method");
   const [method, setMethod] = useState<AuthMethod>(
-    telegramError ? "telegram" : "email",
+    telegramError || requestedMethod === "telegram"
+      ? "telegram"
+      : requestedMethod === "device"
+        ? "device"
+        : "email",
   );
 
   return (
@@ -60,14 +66,15 @@ export default function AuthClient({
             </div>
 
             {method === "email" ? (
-              <EmailAuth embedded />
+              <EmailAuth embedded linking={linking} />
             ) : method === "telegram" ? (
               <TelegramAuth
                 authOrigin={telegramAuthOrigin}
                 botUsername={telegramBotUsername}
+                linking={linking}
               />
             ) : (
-              <DeviceAuth />
+              <DeviceAuth linking={linking} />
             )}
 
             {telegramError ? (

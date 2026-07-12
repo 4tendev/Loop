@@ -7,6 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/providers/UserProvider";
 import { getProfileImageSrc } from "@/lib/profile-image";
 import type { ApiUser } from "@/types/user";
+import type { AuthProvider } from "@/types/user";
+
+type ApiAuthMethod = { id: string; provider: AuthProvider; providerUserId: string; createdAt: string; lastUsedAt: string | null };
+const providerLabels: Partial<Record<AuthProvider, string>> = { email: "ایمیل", telegram: "تلگرام", device: "دستگاه" };
 
 type UpdateUserResponse = {
   code: number;
@@ -113,9 +117,18 @@ export default function Dashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [authMethods, setAuthMethods] = useState<ApiAuthMethod[]>([]);
 
   useEffect(() => {
     setName(user?.name ?? "");
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/user/auth-methods", { credentials: "same-origin" })
+      .then((response) => response.json())
+      .then((result: { data: ApiAuthMethod[] | null }) => setAuthMethods(result.data ?? []))
+      .catch(() => setError("دریافت روش‌های ورود انجام نشد."));
   }, [user]);
 
   const trimmedName = name.trim();
@@ -325,6 +338,30 @@ export default function Dashboard() {
                 ذخیره نام
               </button>
             </form>
+
+            <div className="divider my-0" />
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">روش‌های ورود</h2>
+                <p className="text-sm text-base-content/60">روش‌های متصل به حساب و گزینه‌های ورود جدید</p>
+              </div>
+              <div className="space-y-2">
+                {authMethods.map((method) => (
+                  <div key={method.id} className="flex items-center justify-between rounded-box border border-base-300 p-3">
+                    <div>
+                      <p className="font-medium">{providerLabels[method.provider] ?? method.provider}</p>
+                      <bdi className="text-xs text-base-content/60">{method.provider === "device" ? `${method.providerUserId.slice(0, 8)}…` : method.providerUserId}</bdi>
+                    </div>
+                    <span className="badge badge-success badge-outline">متصل</span>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {(["email", "telegram", "device"] as const).filter((provider) => !authMethods.some((method) => method.provider === provider)).map((provider) => (
+                  <Link key={provider} href={`/auth?link=1&method=${provider}`} className="btn btn-outline btn-sm">افزودن {providerLabels[provider]}</Link>
+                ))}
+              </div>
+            </section>
 
             <input
               ref={profileImageInputRef}

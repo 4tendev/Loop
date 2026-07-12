@@ -5,18 +5,22 @@ import { useEffect, useRef, useState } from "react";
 type TelegramAuthProps = {
   authOrigin: string;
   botUsername: string;
+  linking?: boolean;
 };
 
-function getTelegramAuthUrl(authOrigin: string) {
+function getTelegramAuthUrl(authOrigin: string, linking: boolean) {
   const trimmedOrigin = authOrigin.trim().replace(/\/+$/, "");
   const origin = trimmedOrigin || window.location.origin;
 
-  return new URL("/api/auth/telegram", origin).toString();
+  const url = new URL("/api/auth/telegram", origin);
+  if (linking) url.searchParams.set("link", "1");
+  return url.toString();
 }
 
 export default function TelegramAuth({
   authOrigin,
   botUsername,
+  linking = false,
 }: TelegramAuthProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [widgetStatus, setWidgetStatus] = useState<"loading" | "ready" | "error">(
@@ -73,7 +77,7 @@ export default function TelegramAuth({
     script.setAttribute("data-telegram-login", botUsername);
     script.setAttribute("data-size", "large");
     script.setAttribute("data-radius", "8");
-    script.setAttribute("data-auth-url", getTelegramAuthUrl(authOrigin));
+    script.setAttribute("data-auth-url", getTelegramAuthUrl(authOrigin, linking));
     script.setAttribute("data-request-access", "write");
     script.onload = markReadyWhenWidgetIsVisible;
     script.onerror = () => setWidgetStatus("error");
@@ -87,7 +91,7 @@ export default function TelegramAuth({
       }
       container.innerHTML = "";
     };
-  }, [authOrigin, botUsername]);
+  }, [authOrigin, botUsername, linking]);
 
   if (!botUsername) {
     return (

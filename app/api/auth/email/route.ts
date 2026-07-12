@@ -11,12 +11,17 @@ import {
   verifySavedEmailLoginCode,
 } from "@/lib/auth/email/login-code";
 import { createUserSession, setSessionCookie } from "@/lib/auth/session";
+import { getUserSessionFromRequest } from "@/lib/auth/session";
+import { AuthMethodAlreadyLinkedError, linkAuthMethod } from "@/lib/auth/link-method";
+import { createEmailProviderUserId, emailAuthProvider } from "@/lib/auth/email";
+import { getPostgresPool } from "@/lib/postgres";
 
 export const dynamic = "force-dynamic";
 
 type EmailLoginRequestBody = {
   email?: unknown;
   code?: unknown;
+  link?: unknown;
 };
 
 export async function POST(request: NextRequest) {
@@ -44,6 +49,13 @@ export async function POST(request: NextRequest) {
         return unauthorized("کد ورود نامعتبر است یا منقضی شده");
       }
 
+      if (body.link === true) {
+        const currentSession = await getUserSessionFromRequest(request);
+        if (!currentSession) return unauthorized("ابتدا وارد حساب خود شوید");
+        await linkAuthMethod(getPostgresPool(), currentSession.user.id, emailAuthProvider, createEmailProviderUserId(body.email));
+        return apiResponse(200, "ایمیل به حساب اضافه شد", currentSession.user);
+      }
+
       const user = await getOrCreateUser(body.email);
       const session = await createUserSession(user);
       const response = apiResponse(
@@ -56,6 +68,7 @@ export async function POST(request: NextRequest) {
 
       return response;
     } catch (error) {
+      if (error instanceof AuthMethodAlreadyLinkedError) return badRequest("این ایمیل به حساب دیگری متصل است");
       if (error instanceof Error && error.message === "Invalid email address") {
         return badRequest("آدرس ایمیل نامعتبر است");
       }

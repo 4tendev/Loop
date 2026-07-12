@@ -7,6 +7,10 @@ import {
   verifyTelegramLoginPayload,
 } from "@/lib/auth/telegram";
 import { createUserSession, setSessionCookie } from "@/lib/auth/session";
+import { getUserSessionFromRequest } from "@/lib/auth/session";
+import { AuthMethodAlreadyLinkedError, linkAuthMethod } from "@/lib/auth/link-method";
+import { createTelegramProviderUserId, telegramAuthProvider } from "@/lib/auth/telegram";
+import { getPostgresPool } from "@/lib/postgres";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +112,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (request.nextUrl.searchParams.get("link") === "1") {
+      const currentSession = await getUserSessionFromRequest(request);
+      if (!currentSession) return redirectWithError(request, "ابتدا وارد حساب خود شوید");
+      await linkAuthMethod(getPostgresPool(), currentSession.user.id, telegramAuthProvider, createTelegramProviderUserId(payload.id));
+      return NextResponse.redirect(getRedirectUrl(request, "/user?linked=telegram"));
+    }
+
     const user = await getOrCreateTelegramUser(payload);
     const session = await createUserSession(user);
     const response = NextResponse.redirect(getRedirectUrl(request, "/user"));
@@ -116,6 +127,9 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
+    if (error instanceof AuthMethodAlreadyLinkedError) {
+      return redirectWithError(request, "این حساب تلگرام به کاربر دیگری متصل است");
+    }
     if (
       error instanceof Error &&
       (error.message === "Invalid Telegram user id" ||
