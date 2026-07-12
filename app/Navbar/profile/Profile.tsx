@@ -35,7 +35,7 @@ export default function Profile({ user }: { user: ApiUser }) {
   }
 
   return (
-    <div className={`drawer ${isDrawerOpen ? "z-[1000]" : ""}`}>
+    <div className={`drawer  h-10 w-10 ${isDrawerOpen ? "z-[1000]" : ""}`}>
       <input
         id="my-drawer-1"
         type="checkbox"

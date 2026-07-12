@@ -40,27 +40,6 @@ export default function AvalonPage() {
                 دیدن میزها
               </Link>
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-base-content/15 bg-base-100/35 p-4 shadow-sm backdrop-blur">
-                <p className="text-sm text-base-content/65">بازیکن‌ها</p>
-                <p className="mt-2 text-2xl font-bold text-base-content">
-                  {playerCounts[0]} تا {playerCounts.at(-1)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-base-content/15 bg-base-100/35 p-4 shadow-sm backdrop-blur">
-                <p className="text-sm text-base-content/65">وضعیت میزها</p>
-                <p className="mt-2 text-2xl font-bold text-base-content">
-                  زنده
-                </p>
-              </div>
-              <div className="rounded-lg border border-base-content/15 bg-base-100/35 p-4 shadow-sm backdrop-blur">
-                <p className="text-sm text-base-content/65">ورود به میز</p>
-                <p className="mt-2 text-2xl font-bold text-base-content">
-                  با صندلی
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>

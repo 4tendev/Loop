@@ -8,15 +8,8 @@ import {
   type AvalonQuestDecisionValue,
   type AvalonSeatActionRequired,
 } from "@/types/avalon";
-import { getProfileImageSrc } from "@/lib/profile-image";
-
 import { formatTime, statusClasses, statusLabels } from "./avalonTableUtils";
-import type {
-  AvalonWsGame,
-  AvalonWsPhase,
-  AvalonWsSeat,
-  ConnectionStatus,
-} from "./types";
+import type { AvalonWsGame, AvalonWsSeat, ConnectionStatus } from "./types";
 
 type AvalonTableCardProps = {
   game: AvalonWsGame;
@@ -71,46 +64,12 @@ type AvalonTableCardProps = {
   onChooseAssassinTarget: (gameId: string, assassinationId: string) => void;
 };
 
-const sideLabels = {
-  good: "خیر",
-  evil: "شر",
-} as const;
-
-const roleLabels = {
-  assassin: "اساسین",
-  merlin: "مرلین",
-  mordred: "موردرد",
-  morgana: "مورگانا",
-  oberon: "اوبرون",
-  percival: "پرسیوال",
-  servant: "خدمتگزار وفادار",
-} as const;
-
-const phaseLabels: Record<AvalonWsPhase["type"], string> = {
-  night: "شب",
-  quest: "انتخاب تیم",
-  mission: "ماموریت",
-  ladyCheck: "بانوی دریاچه",
-  assassination: "ترور",
-  unknown: "مرحله",
-};
-
-const roleImageByName = {
-  assassin: "/avalon/avalon_characters/Assassin.png",
-  merlin: "/avalon/avalon_characters/Merlin.png",
-  mordred: "/avalon/avalon_characters/Mordred.png",
-  morgana: "/avalon/avalon_characters/Morgana.png",
-  oberon: "/avalon/avalon_characters/Oberon.png",
-  percival: "/avalon/avalon_characters/Percival.png",
-  servant: "/avalon/avalon_characters/LoyalServantOfArthur.png",
-} as const;
-
-const evilRoleNames = new Set<keyof typeof roleImageByName>([
-  "assassin",
-  "morgana",
-  "mordred",
-  "oberon",
-]);
+import {
+  phaseLabels,
+  roleLabels,
+  sideLabels,
+} from "./avalonTableCardConstants";
+import { AvalonTableSeat } from "./AvalonTableSeat";
 
 export function AvalonTableCard({
   game,
@@ -176,9 +135,7 @@ export function AvalonTableCard({
     actionRequired?.type === "avalon.ladyTarget" ? actionRequired.id : null;
   const isLadyTargetMode = Boolean(ladyCheckId);
   const assassinationId =
-    actionRequired?.type === "avalon.assassinAction"
-      ? actionRequired.id
-      : null;
+    actionRequired?.type === "avalon.assassinAction" ? actionRequired.id : null;
   const isAssassinTargetMode = Boolean(assassinationId);
   const selectedLadyTargetSeat = selectedLadyTargetSeatId
     ? game.seats.find((seat) => seat.id === selectedLadyTargetSeatId)
@@ -308,287 +265,51 @@ export function AvalonTableCard({
       ? "This table was cancelled before the game finished."
       : `${succeededMissionCount} successful missions, ${failedMissionCount} failed missions.`;
 
+  const seatProps = {
+    game,
+    ownSeatId: ownSeat?.id,
+    selectedSeatId,
+    selectedTeamSeatIds,
+    activeQuestTeamSeatNumbers,
+    selectedLadyTargetSeatId,
+    selectedAssassinTargetSeatId,
+    nominationQuestId,
+    ladyCheckId,
+    assassinationId,
+    teamSlotCount,
+    isTerminalGame,
+    isAssassinationPhase,
+    lastKingSeatNumber,
+    lastKingPlayerName: latestQuest?.kingPlayerName,
+    onSelectSeat,
+    onToggleTeamSeat,
+    onSelectLadyTarget,
+    onSelectAssassinTarget,
+  };
+
   function renderSeat(
     seat: AvalonWsSeat,
     position: "top" | "right" | "bottom" | "left",
   ) {
-    const isOwnSeat = ownSeat?.id === seat.id;
-    const isSelectedForTeam = selectedTeamSeatIds.includes(seat.id);
-    const isMateSeat =
-      isSelectedForTeam || activeQuestTeamSeatNumbers.has(seat.number);
-    const isSelectedForLadyTarget = selectedLadyTargetSeatId === seat.id;
-    const isSelectedForAssassinTarget =
-      selectedAssassinTargetSeatId === seat.id;
-    const canToggleTeamSeat =
-      !isTerminalGame && isNominationMode && Boolean(seat.player);
-    const canSelectLadyTarget =
-      !isTerminalGame &&
-      isLadyTargetMode &&
-      Boolean(seat.player) &&
-      seat.id !== ownSeat?.id;
-    const canSelectAssassinTarget =
-      !isTerminalGame && isAssassinTargetMode && Boolean(seat.player);
-    const roleImage = seat.role ? roleImageByName[seat.role] : null;
-    const showRoleImage =
-      Boolean(roleImage) &&
-      (isTerminalGame ||
-        (isAssassinationPhase &&
-          Boolean(seat.role && evilRoleNames.has(seat.role))));
-    const seatImage = showRoleImage
-      ? (roleImage ?? getProfileImageSrc(seat.player?.profileImage))
-      : getProfileImageSrc(seat.player?.profileImage);
-    const seatImageAlt =
-      showRoleImage && seat.role
-        ? seat.role
-        : (seat.player?.name ?? `Seat ${seat.number}`);
-    const connectorClasses = {
-      top: "bottom-0 left-1/2 h-5 w-px -translate-x-1/2",
-      right: "left-0 top-1/2 h-px w-5 -translate-y-1/2",
-      bottom: "left-1/2 top-0 h-5 w-px -translate-x-1/2",
-      left: "right-0 top-1/2 h-px w-5 -translate-y-1/2",
-    };
-
     return (
-      <div
-        className="relative z-10 flex min-h-12 min-w-12 flex-1 items-center justify-center"
+      <AvalonTableSeat
+        {...seatProps}
         key={seat.id}
-      >
-        <span
-          className={`absolute bg-base-300 ${connectorClasses[position]}`}
-        />
-        <button
-          aria-label={
-            seat.player
-              ? `صندلی ${seat.number}: ${seat.player.name}`
-              : `صندلی ${seat.number}`
-          }
-          className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-semibold shadow-sm transition ${
-            isSelectedForTeam
-              ? "border-success bg-success text-success-content shadow-success/30"
-              : isSelectedForLadyTarget
-                ? "border-secondary bg-secondary text-secondary-content shadow-secondary/30"
-              : isSelectedForAssassinTarget
-                ? "border-error bg-error text-error-content shadow-error/30"
-              : selectedSeatId === seat.id
-                ? "border-primary bg-primary text-primary-content shadow-primary/30"
-                : seat.player
-                  ? canToggleTeamSeat ||
-                    canSelectLadyTarget ||
-                    canSelectAssassinTarget
-                    ? "border-base-300 bg-base-100 hover:border-success hover:bg-success/10"
-                    : "border-base-300 bg-base-100"
-                  : "border-base-300 bg-base-100 hover:border-primary hover:bg-primary/10"
-          } ${
-            isOwnSeat
-              ? "outline outline-2 outline-offset-2 outline-primary shadow-primary/40"
-              : ""
-          }`}
-          onClick={() => {
-            if (canToggleTeamSeat && nominationQuestId) {
-              onToggleTeamSeat(nominationQuestId, seat.id, teamSlotCount);
-              return;
-            }
-
-            if (canSelectLadyTarget && ladyCheckId) {
-              onSelectLadyTarget(ladyCheckId, seat.id);
-              return;
-            }
-
-            if (canSelectAssassinTarget && assassinationId) {
-              onSelectAssassinTarget(assassinationId, seat.id);
-              return;
-            }
-
-            if (!isTerminalGame) {
-              onSelectSeat(game, seat);
-            }
-          }}
-          title={seat.player?.name ?? "صندلی خالی"}
-          type="button"
-        >
-          {isOwnSeat ? (
-            <span className="pointer-events-none absolute -right-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-primary/50 bg-primary px-1.5 py-0.5 text-[0.55rem] font-black uppercase leading-none text-primary-content shadow">
-              شما
-            </span>
-          ) : null}
-          {isMateSeat ? (
-            <img
-              alt="Selected teammate"
-              className="pointer-events-none absolute -right-2 bottom-0 z-20 h-7 w-7 translate-y-1/2 rounded-full border border-success/50 bg-base-100 object-cover p-0.5 shadow-lg"
-              src="/avalon/Mate.png"
-              title={`Seat ${seat.number}`}
-            />
-          ) : null}
-          {seat.player ? (
-            <img
-              alt={seatImageAlt}
-              className="h-10 w-10 rounded-full object-cover"
-              src={seatImage}
-            />
-          ) : (
-            seat.number
-          )}
-        </button>
-      </div>
+        position={position}
+        seat={seat}
+        variant="grid"
+      />
     );
   }
 
   function renderCouncilSeat(seat: AvalonWsSeat) {
-    const isOwnSeat = ownSeat?.id === seat.id;
-    const isSelectedForTeam = selectedTeamSeatIds.includes(seat.id);
-    const isMateSeat =
-      isSelectedForTeam || activeQuestTeamSeatNumbers.has(seat.number);
-    const isSelectedForLadyTarget = selectedLadyTargetSeatId === seat.id;
-    const isSelectedForAssassinTarget =
-      selectedAssassinTargetSeatId === seat.id;
-    const canToggleTeamSeat =
-      !isTerminalGame && isNominationMode && Boolean(seat.player);
-    const canSelectLadyTarget =
-      !isTerminalGame &&
-      isLadyTargetMode &&
-      Boolean(seat.player) &&
-      seat.id !== ownSeat?.id;
-    const canSelectAssassinTarget =
-      !isTerminalGame && isAssassinTargetMode && Boolean(seat.player);
-    const angle = -90 + ((seat.number - 1) * 360) / game.seats.length;
-    const radians = (angle * Math.PI) / 180;
-    const radius = 43;
-    const seatStyle = {
-      left: `${50 + Math.cos(radians) * radius}%`,
-      top: `${50 + Math.sin(radians) * radius}%`,
-    } as CSSProperties;
-    const isLastKing = lastKingSeatNumber === seat.number;
-    const inwardX = -Math.cos(radians);
-    const inwardY = -Math.sin(radians);
-    const kingMarkerDistance = isMateSeat ? 2.7 : 2.7;
-    const mateMarkerDistance = isLastKing ?3.5 : 2.7;
-    const kingMarkerStyle = {
-      transform: "translate(-50%, -50%)",
-      left: `calc(50% + ${(inwardX * kingMarkerDistance).toFixed(3)}rem)`,
-      top: `calc(50% + ${(inwardY * kingMarkerDistance).toFixed(3)}rem)`,
-    } as CSSProperties;
-    const mateMarkerStyle = {
-      transform: "translate(-50%, -50%)",
-      left: `calc(50% + ${(inwardX * mateMarkerDistance).toFixed(3)}rem)`,
-      top: `calc(50% + ${(inwardY * mateMarkerDistance).toFixed(3)}rem)`,
-    } as CSSProperties;
-    const seatTone = isSelectedForTeam
-      ? "border-success bg-success text-success-content shadow-success/30"
-      : isSelectedForLadyTarget
-        ? "border-info bg-info text-info-content shadow-info/30"
-        : isSelectedForAssassinTarget
-          ? "border-error bg-error text-error-content shadow-error/30"
-          : selectedSeatId === seat.id
-            ? "border-warning bg-warning text-warning-content shadow-warning/30"
-            : seat.player
-              ? "border-base-300 bg-base-100 text-base-content"
-              : "border-base-300 bg-base-200 text-base-content/70";
-    const displayName = seat.player
-      ? Array.from(seat.player.name).slice(0, 10).join("")
-      : "";
-    const displayNamePosition =
-      seat.number === 1
-        ? "bottom-[calc(100%+0.6rem)]"
-        : "top-[calc(100%+0.125rem)]";
-    const roleImage = seat.role ? roleImageByName[seat.role] : null;
-    const showRoleImage =
-      Boolean(roleImage) &&
-      (isTerminalGame ||
-        (isAssassinationPhase &&
-          Boolean(seat.role && evilRoleNames.has(seat.role))));
-    const seatImage =
-      showRoleImage
-        ? (roleImage ?? getProfileImageSrc(seat.player?.profileImage))
-        : getProfileImageSrc(seat.player?.profileImage);
-    const seatImageAlt =
-      showRoleImage && seat.role
-        ? seat.role
-        : (seat.player?.name ?? `صندلی ${seat.number}`);
-
     return (
-      <button
-        aria-label={
-          seat.player
-            ? `صندلی ${seat.number}: ${seat.player.name}`
-            : `صندلی ${seat.number}`
-        }
-        className={`absolute z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-bold shadow-lg transition sm:h-14 sm:w-14 ${seatTone} ${
-          canToggleTeamSeat || canSelectLadyTarget || canSelectAssassinTarget
-            ? "ring-2 ring-warning/70"
-            : ""
-        } ${
-          isOwnSeat
-            ? "outline outline-2 outline-offset-2 outline-primary shadow-primary/40"
-            : ""
-        }`}
+      <AvalonTableSeat
+        {...seatProps}
         key={seat.id}
-        onClick={() => {
-          if (canToggleTeamSeat && nominationQuestId) {
-            onToggleTeamSeat(nominationQuestId, seat.id, teamSlotCount);
-            return;
-          }
-
-          if (canSelectLadyTarget && ladyCheckId) {
-            onSelectLadyTarget(ladyCheckId, seat.id);
-            return;
-          }
-
-          if (canSelectAssassinTarget && assassinationId) {
-            onSelectAssassinTarget(assassinationId, seat.id);
-            return;
-          }
-
-          if (!isTerminalGame) {
-            onSelectSeat(game, seat);
-          }
-        }}
-        title={seat.player?.name ?? "صندلی خالی"}
-        type="button"
-        style={seatStyle}
-      >
-        <span className="pointer-events-none absolute left-1/2 top-0 flex h-4 min-w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-warning/40 bg-base-100/90 px-1 text-[0.6rem] font-black leading-none text-warning shadow">
-          {seat.number}
-        </span>
-        {isOwnSeat ? (
-          <span className="pointer-events-none absolute -right-3 top-1/4 z-20 -translate-y-1/2 rounded-full border border-primary/50 bg-primary px-0.5 py-0.5 text-[0.55rem] font-black uppercase leading-none text-primary-content shadow sm:-right-4">
-            شما
-          </span>
-        ) : null}
-        {isLastKing ? (
-          <img
-            alt="Last king"
-            className="pointer-events-none absolute z-30 h-7 w-7 rounded-full border border-warning/50 bg-base-100 object-cover p-0.5 shadow-lg sm:h-8 sm:w-8"
-            src="/avalon/King.png"
-            style={kingMarkerStyle}
-            title={latestQuest?.kingPlayerName ?? `Seat ${seat.number}`}
-          />
-        ) : null}
-        {isMateSeat ? (
-          <img
-            alt="Selected teammate"
-            className="pointer-events-none absolute z-30 h-7 w-7 rounded-full border border-success/50 bg-base-100 object-cover p-0.5 shadow-lg sm:h-8 sm:w-8"
-            src="/avalon/Mate.png"
-            style={mateMarkerStyle}
-            title={`Seat ${seat.number}`}
-          />
-        ) : null}
-        {seat.player ? (
-          <>
-            <img
-              alt={seatImageAlt}
-              className="h-9 w-9 rounded-full object-cover sm:h-11 sm:w-11"
-              src={seatImage}
-            />
-            <span
-              className={`pointer-events-none absolute left-1/2 max-w-20 -translate-x-1/2 truncate whitespace-nowrap rounded bg-base-100/85 px-1 text-[0.55rem] font-bold leading-4 text-base-content shadow ${displayNamePosition}`}
-            >
-              {displayName}
-            </span>
-          </>
-        ) : (
-          seat.number
-        )}
-      </button>
+        seat={seat}
+        variant="council"
+      />
     );
   }
 
@@ -616,7 +337,9 @@ export function AvalonTableCard({
       </button>,
       <button
         className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-error/50 bg-error px-2 py-2 text-xs font-bold text-error-content disabled:opacity-45"
-        disabled={cancellingGameId === game.id || connectionStatus !== "connected"}
+        disabled={
+          cancellingGameId === game.id || connectionStatus !== "connected"
+        }
         key="cancel"
         onClick={() => onCancelGame(game.id)}
         type="button"
@@ -649,7 +372,9 @@ export function AvalonTableCard({
       </button>,
       <button
         className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-base-content/25 bg-base-100 px-2 py-2 text-xs font-bold text-base-content disabled:opacity-45"
-        disabled={pendingSeatGameId === game.id || connectionStatus !== "connected"}
+        disabled={
+          pendingSeatGameId === game.id || connectionStatus !== "connected"
+        }
         key="leave-seat"
         onClick={() => onLeaveSeat(game.id)}
         type="button"
@@ -772,7 +497,9 @@ export function AvalonTableCard({
         }
         type="button"
       >
-        <span className="text-lg leading-none">{selectedTeamSeatIds.length}/{teamSlotCount}</span>
+        <span className="text-lg leading-none">
+          {selectedTeamSeatIds.length}/{teamSlotCount}
+        </span>
         <span>ثبت تیم</span>
       </button>,
     );
@@ -838,10 +565,45 @@ export function AvalonTableCard({
       {isTableView ? (
         <>
           <div className="shrink-0 px-3 pt-2">
-            <div className="rounded-md border border-base-content/15 bg-base-100/80 px-3 py-2 text-center shadow-lg">
-              <p className="truncate text-sm font-medium text-base-content">
-                {game.publicMessage || "پیام عمومی ثبت نشده"}
-              </p>
+            <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-2">
+              <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-black text-warning">
+                {game.occupiedSeatCount}/{game.config.playerCount}
+              </span>
+              <span className="truncate text-xs text-base-content/70">
+                {latestPhase
+                  ? phaseLabels[latestPhase.type]
+                  : statusLabels[game.status]}
+              </span>
+              <img
+                alt="Oberon"
+                className={`h-7 w-7 rounded-full border object-cover ${
+                  game.config.useOberon
+                    ? "border-error opacity-100"
+                    : "border-base-content/20 opacity-35 grayscale"
+                }`}
+                src="/avalon/avalon_characters/Oberon.png"
+                title="Oberon"
+              />
+              <img
+                alt="Lady of the Lake"
+                className={`h-7 w-7 rounded-full border object-cover ${
+                  game.config.useLadyOfTheLake
+                    ? "border-info opacity-100"
+                    : "border-base-content/20 opacity-35 grayscale"
+                }`}
+                src="/avalon/avalon_characters/LadyOfTheLake.png"
+                title="Lady of the Lake"
+              />
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black ${
+                  game.config.roleExposing
+                    ? "border-warning bg-warning text-warning-content"
+                    : "border-base-content/20 bg-base-200 text-base-content/40"
+                }`}
+                title="Role exposing"
+              >
+                ◉
+              </span>
             </div>
           </div>
 
@@ -911,45 +673,6 @@ export function AvalonTableCard({
           </div>
 
           <div className="z-30 shrink-0 border-t border-base-content/15 bg-base-100/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-base-content/20">
-            <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-2">
-              <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-black text-warning">
-                {game.occupiedSeatCount}/{game.config.playerCount}
-              </span>
-              <span className="truncate text-xs text-base-content/70">
-                {latestPhase ? phaseLabels[latestPhase.type] : statusLabels[game.status]}
-              </span>
-              <img
-                alt="Oberon"
-                className={`h-7 w-7 rounded-full border object-cover ${
-                  game.config.useOberon
-                    ? "border-error opacity-100"
-                    : "border-base-content/20 opacity-35 grayscale"
-                }`}
-                src="/avalon/avalon_characters/Oberon.png"
-                title="Oberon"
-              />
-              <img
-                alt="Lady of the Lake"
-                className={`h-7 w-7 rounded-full border object-cover ${
-                  game.config.useLadyOfTheLake
-                    ? "border-info opacity-100"
-                    : "border-base-content/20 opacity-35 grayscale"
-                }`}
-                src="/avalon/avalon_characters/LadyOfTheLake.png"
-                title="Lady of the Lake"
-              />
-              <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black ${
-                  game.config.roleExposing
-                    ? "border-warning bg-warning text-warning-content"
-                    : "border-base-content/20 bg-base-200 text-base-content/40"
-                }`}
-                title="Role exposing"
-              >
-                ◉
-              </span>
-            </div>
-
             {latestLadyReveal?.targetSide ? (
               <div
                 className={`mb-2 flex items-center justify-between rounded-md border px-3 py-2 text-xs font-bold ${
@@ -980,7 +703,9 @@ export function AvalonTableCard({
                     <span className="rounded-full bg-base-content/10 px-2 py-0.5 font-bold">
                       صندلی {latestNightSummary.ownSeatNumber}
                     </span>
-                    <span>نقش شما : {roleLabels[latestNightSummary.ownRole]}</span>
+                    <span>
+                      نقش شما : {roleLabels[latestNightSummary.ownRole]}
+                    </span>
                   </div>
                 ) : (
                   <p className="text-base-content/60">
@@ -1030,7 +755,7 @@ export function AvalonTableCard({
               {actionButtons.length > 0 ? (
                 actionButtons
               ) : (
-                <div className="flex min-h-14 flex-1 items-center justify-center rounded-md border border-base-content/20 bg-base-200 text-xs text-base-content/55">
+                <div className="flex min-h-7 flex-1 items-center justify-center rounded-md border border-base-content/20 bg-base-200 text-xs text-base-content/55">
                   اقدامی لازم نیست
                 </div>
               )}
@@ -1041,369 +766,381 @@ export function AvalonTableCard({
 
       {!isTableView ? (
         <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold">بازی {game.id.slice(0, 8)}</h2>
-            <span
-              className={`badge badge-outline ${statusClasses[game.status]}`}
-            >
-              {statusLabels[game.status]}
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-base-content/60">
-            ساخته‌شده توسط {game.creator.name}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-start gap-2">
-          {isTableView && isCreator && game.status === "lobby" ? (
-            <button
-              className="btn btn-success btn-sm"
-              disabled={
-                !isFull ||
-                startingGameId === game.id ||
-                connectionStatus !== "connected"
-              }
-              onClick={() => onStartGame(game.id)}
-              title={
-                isFull ? "شروع بازی" : "برای شروع، همه صندلی‌ها باید پر باشند"
-              }
-              type="button"
-            >
-              {startingGameId === game.id ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : null}
-              شروع بازی
-            </button>
-          ) : null}
-
-          {isTableView && isCreator && game.status === "lobby" ? (
-            <button
-              className="btn btn-error btn-sm"
-              disabled={
-                cancellingGameId === game.id || connectionStatus !== "connected"
-              }
-              onClick={() => onCancelGame(game.id)}
-              type="button"
-            >
-              {cancellingGameId === game.id ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : null}
-              لغو بازی
-            </button>
-          ) : null}
-
-          {isTableView && game.status === "lobby" && ownSeat ? (
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={
-                !selectedSeat ||
-                pendingSeatGameId === game.id ||
-                connectionStatus !== "connected"
-              }
-              onClick={() => onChangeSeat(game.id)}
-              type="button"
-            >
-              {pendingSeatGameId === game.id ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : null}
-              تغییر صندلی
-            </button>
-          ) : null}
-
-          {isTableView && game.status === "lobby" && ownSeat ? (
-            <button
-              className="btn btn-outline btn-error btn-sm"
-              disabled={
-                pendingSeatGameId === game.id ||
-                connectionStatus !== "connected"
-              }
-              onClick={() => onLeaveSeat(game.id)}
-              type="button"
-            >
-              {pendingSeatGameId === game.id ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : null}
-              ترک صندلی
-            </button>
-          ) : null}
-
-          {isTableView && game.status === "lobby" && !ownSeat ? (
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={
-                !selectedSeat ||
-                pendingSeatGameId === game.id ||
-                connectionStatus !== "connected"
-              }
-              onClick={() => onJoinSeat(game.id)}
-              type="button"
-            >
-              {pendingSeatGameId === game.id ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : null}
-              نشستن
-            </button>
-          ) : null}
-
-          {!tableId ? (
-            <Link
-              className="btn btn-outline btn-sm"
-              href={`/games/avalon/tables/${game.id}`}
-            >
-              ورود به میز
-            </Link>
-          ) : null}
-
-          <div className="stats stats-horizontal bg-base-100 shadow-none">
-            <div className="stat min-w-24 px-4 py-2">
-              <div className="stat-title text-xs">صندلی‌ها</div>
-              <div className="stat-value text-lg">
-                {game.occupiedSeatCount}/{game.config.playerCount}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-md bg-base-100 px-3 py-2">
-          <span className="block text-xs text-base-content/50">اوبرون</span>
-          <span>{game.config.useOberon ? "فعال" : "غیرفعال"}</span>
-        </div>
-        <div className="rounded-md bg-base-100 px-3 py-2">
-          <span className="block text-xs text-base-content/50">
-            بانوی دریاچه
-          </span>
-          <span>{game.config.useLadyOfTheLake ? "فعال" : "غیرفعال"}</span>
-        </div>
-        <div className="rounded-md bg-base-100 px-3 py-2">
-          <span className="block text-xs text-base-content/50">نقش‌ها</span>
-          <span>{game.config.roleExposing ? "نمایان" : "پنهان"}</span>
-        </div>
-        <div className="rounded-md bg-base-100 px-3 py-2">
-          <span className="block text-xs text-base-content/50">زمان ساخت</span>
-          <span>{formatTime(game.createdAt)}</span>
-        </div>
-      </div>
-
-      {isTerminalGame ? (
-        <div
-          className={`mt-4 rounded-md border px-3 py-3 text-sm ${resultTone}`}
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <span className="block text-base font-semibold">
-                {resultTitle}
-              </span>
-              <span className="text-base-content/70">{resultDetail}</span>
-            </div>
-
-            <div className="grid gap-1 text-right text-xs text-base-content/60 sm:text-left">
-              {game.endedAt ? (
-                <span>Ended {formatTime(game.endedAt)}</span>
-              ) : null}
-              {game.startedAt ? (
-                <span>Started {formatTime(game.startedAt)}</span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {isTableView && isNominationMode && nominationQuestId ? (
-        <div className="mt-4 rounded-md border border-success/30 bg-success/10 px-3 py-3 text-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <span className="block font-medium text-success">
-                انتخاب تیم ماموریت
-              </span>
-              <span className="text-base-content/70">
-                {selectedTeamSeatIds.length}/{teamSlotCount} صندلی انتخاب شده
-              </span>
-            </div>
-
-            <button
-              className="btn btn-success btn-sm w-fit"
-              disabled={
-                selectedTeamSeatIds.length !== teamSlotCount ||
-                pendingNominationQuestId === nominationQuestId ||
-                connectionStatus !== "connected"
-              }
-              onClick={() =>
-                onNominateTeammates(game.id, nominationQuestId, teamSlotCount)
-              }
-              type="button"
-            >
-              {pendingNominationQuestId === nominationQuestId ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : null}
-              ثبت تیم
-            </button>
-          </div>
-
-          {selectedTeamSeats.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {selectedTeamSeats.map((seat) => (
-                <span className="badge badge-success gap-1" key={seat.id}>
-                  صندلی {seat.number}
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-semibold">بازی {game.id.slice(0, 8)}</h2>
+                <span
+                  className={`badge badge-outline ${statusClasses[game.status]}`}
+                >
+                  {statusLabels[game.status]}
                 </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {isTableView && isLadyTargetMode && ladyCheckId ? (
-        <div className="mt-4 rounded-md border border-secondary/30 bg-secondary/10 px-3 py-3 text-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <span className="block font-medium text-secondary">
-                Lady of the Lake
-              </span>
-              <span className="text-base-content/70">
-                {selectedLadyTargetSeat
-                  ? `Target: seat ${selectedLadyTargetSeat.number}`
-                  : "Choose one target seat"}
-              </span>
+              </div>
+              <p className="mt-1 text-sm text-base-content/60">
+                ساخته‌شده توسط {game.creator.name}
+              </p>
             </div>
 
-            <button
-              className="btn btn-secondary btn-sm w-fit"
-              disabled={
-                !selectedLadyTargetSeatId ||
-                pendingLadyTargetId === ladyCheckId ||
-                connectionStatus !== "connected"
-              }
-              onClick={() => onChooseLadyTarget(game.id, ladyCheckId)}
-              type="button"
-            >
-              {pendingLadyTargetId === ladyCheckId ? (
-                <span className="loading loading-spinner loading-xs" />
+            <div className="flex flex-wrap items-start gap-2">
+              {isTableView && isCreator && game.status === "lobby" ? (
+                <button
+                  className="btn btn-success btn-sm"
+                  disabled={
+                    !isFull ||
+                    startingGameId === game.id ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() => onStartGame(game.id)}
+                  title={
+                    isFull
+                      ? "شروع بازی"
+                      : "برای شروع، همه صندلی‌ها باید پر باشند"
+                  }
+                  type="button"
+                >
+                  {startingGameId === game.id ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  شروع بازی
+                </button>
               ) : null}
-              Check Target
-            </button>
-          </div>
-        </div>
-      ) : null}
 
-      {isTableView && isAssassinTargetMode && assassinationId ? (
-        <div className="mt-4 rounded-md border border-error/30 bg-error/10 px-3 py-3 text-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <span className="block font-medium text-error">
-                Assassination
-              </span>
-              <span className="text-base-content/70">
-                {selectedAssassinTargetSeat
-                  ? `Target: seat ${selectedAssassinTargetSeat.number}`
-                  : "Choose Merlin"}
-              </span>
-            </div>
-
-            <button
-              className="btn btn-error btn-sm w-fit"
-              disabled={
-                !selectedAssassinTargetSeatId ||
-                pendingAssassinActionId === assassinationId ||
-                connectionStatus !== "connected"
-              }
-              onClick={() => onChooseAssassinTarget(game.id, assassinationId)}
-              type="button"
-            >
-              {pendingAssassinActionId === assassinationId ? (
-                <span className="loading loading-spinner loading-xs" />
+              {isTableView && isCreator && game.status === "lobby" ? (
+                <button
+                  className="btn btn-error btn-sm"
+                  disabled={
+                    cancellingGameId === game.id ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() => onCancelGame(game.id)}
+                  type="button"
+                >
+                  {cancellingGameId === game.id ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  لغو بازی
+                </button>
               ) : null}
-              Choose Merlin
-            </button>
-          </div>
-        </div>
-      ) : null}
 
-      {isTableView ? (
-        <div className="mt-5 rounded-lg border border-base-300 bg-base-100 p-4">
-          <div
-            className="mx-auto grid max-w-xl grid-cols-[3rem_minmax(0,1fr)_3rem] grid-rows-[3rem_minmax(14rem,1fr)_3rem] gap-3 sm:grid-cols-[4rem_minmax(0,1fr)_4rem] sm:grid-rows-[4rem_minmax(16rem,1fr)_4rem]"
-            dir="ltr"
-          >
-            <div className="relative col-start-2 flex justify-center gap-2 px-2 before:absolute before:bottom-0 before:left-8 before:right-8 before:h-px before:bg-base-300">
-              {topSeats.map((seat) => renderSeat(seat, "top"))}
-            </div>
+              {isTableView && game.status === "lobby" && ownSeat ? (
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={
+                    !selectedSeat ||
+                    pendingSeatGameId === game.id ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() => onChangeSeat(game.id)}
+                  type="button"
+                >
+                  {pendingSeatGameId === game.id ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  تغییر صندلی
+                </button>
+              ) : null}
 
-            <div className="relative col-start-1 row-start-2 flex flex-col justify-center gap-2 py-2 before:absolute before:bottom-8 before:right-0 before:top-8 before:w-px before:bg-base-300">
-              {leftSeats.map((seat) => renderSeat(seat, "left"))}
-            </div>
+              {isTableView && game.status === "lobby" && ownSeat ? (
+                <button
+                  className="btn btn-outline btn-error btn-sm"
+                  disabled={
+                    pendingSeatGameId === game.id ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() => onLeaveSeat(game.id)}
+                  type="button"
+                >
+                  {pendingSeatGameId === game.id ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  ترک صندلی
+                </button>
+              ) : null}
 
-            <div className="relative col-start-2 row-start-2 flex items-center justify-center rounded-xl border border-base-300 bg-base-200 shadow-inner">
-              <div className="absolute bottom-6 left-1/2 top-6 w-px -translate-x-1/2 bg-base-300" />
-              <div className="absolute left-6 right-6 top-1/2 h-px -translate-y-1/2 bg-base-300" />
-              <div className="relative z-10 grid w-full max-w-52 grid-cols-5 gap-1 px-3 sm:max-w-56 sm:gap-1.5">
-                {missionRules.map((rule, index) => {
-                  const round = index + 1;
-                  const missionResult = missionResultByRound.get(round);
-                  const isDecidingMission = decidingMissionRound === round;
-                  const resultClasses =
-                    missionResult?.result === "succeeded"
-                      ? "border-success/60 bg-success/15 text-success"
-                      : missionResult?.result === "failed"
-                        ? "border-error/60 bg-error/15 text-error"
-                        : "border-base-300 bg-base-100";
-                  const decidingClasses = isDecidingMission
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-base-200"
-                    : "";
+              {isTableView && game.status === "lobby" && !ownSeat ? (
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={
+                    !selectedSeat ||
+                    pendingSeatGameId === game.id ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() => onJoinSeat(game.id)}
+                  type="button"
+                >
+                  {pendingSeatGameId === game.id ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  نشستن
+                </button>
+              ) : null}
 
-                  return (
-                    <div
-                      className={`flex aspect-[4/5] min-h-12 flex-col items-center justify-between rounded-md border px-1 py-1.5 text-center shadow-sm ${resultClasses} ${decidingClasses}`}
-                      key={index}
-                      title={
-                        missionResult?.result
-                          ? `Mission ${round}: ${missionResult.result}. Success: ${missionResult.successCount}, fail: ${missionResult.failCount}.`
-                          : `Mission ${round}: ${missionResult?.voteCount ?? 0}/${missionResult?.teamMemberCount ?? rule.players} votes.`
-                      }
-                    >
-                      <span className="text-[0.55rem] font-semibold leading-none text-base-content/50">
-                        {round}
-                      </span>
-                      <span className="text-base font-bold leading-none">
-                        {missionResult?.result === "succeeded"
-                          ? "S"
-                          : missionResult?.result === "failed"
-                            ? "F"
-                            : rule.players}
-                      </span>
-                      <span
-                        className={`text-[0.5rem] font-medium leading-tight ${
-                          missionResult?.result === "succeeded"
-                            ? "text-success"
-                            : "text-error"
-                        }`}
-                      >
-                        {isDecidingMission
-                          ? "Deciding"
-                          : missionResult?.result === "succeeded"
-                            ? "Success"
-                            : missionResult?.result === "failed"
-                              ? "Failure"
-                              : `${rule.minimumFailures} fail`}
-                      </span>
-                    </div>
-                  );
-                })}
+              {!tableId ? (
+                <Link
+                  className="btn btn-outline btn-sm"
+                  href={`/games/avalon/tables/${game.id}`}
+                >
+                  ورود به میز
+                </Link>
+              ) : null}
+
+              <div className="stats stats-horizontal bg-base-100 shadow-none">
+                <div className="stat min-w-24 px-4 py-2">
+                  <div className="stat-title text-xs">صندلی‌ها</div>
+                  <div className="stat-value text-lg">
+                    {game.occupiedSeatCount}/{game.config.playerCount}
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="relative col-start-3 row-start-2 flex flex-col justify-center gap-2 py-2 before:absolute before:bottom-8 before:left-0 before:top-8 before:w-px before:bg-base-300">
-              {rightSeats.map((seat) => renderSeat(seat, "right"))}
+          <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-md bg-base-100 px-3 py-2">
+              <span className="block text-xs text-base-content/50">اوبرون</span>
+              <span>{game.config.useOberon ? "فعال" : "غیرفعال"}</span>
             </div>
-
-            <div className="relative col-start-2 row-start-3 flex justify-center gap-2 px-2 before:absolute before:left-8 before:right-8 before:top-0 before:h-px before:bg-base-300">
-              {bottomSeats.map((seat) => renderSeat(seat, "bottom"))}
+            <div className="rounded-md bg-base-100 px-3 py-2">
+              <span className="block text-xs text-base-content/50">
+                بانوی دریاچه
+              </span>
+              <span>{game.config.useLadyOfTheLake ? "فعال" : "غیرفعال"}</span>
+            </div>
+            <div className="rounded-md bg-base-100 px-3 py-2">
+              <span className="block text-xs text-base-content/50">نقش‌ها</span>
+              <span>{game.config.roleExposing ? "نمایان" : "پنهان"}</span>
+            </div>
+            <div className="rounded-md bg-base-100 px-3 py-2">
+              <span className="block text-xs text-base-content/50">
+                زمان ساخت
+              </span>
+              <span>{formatTime(game.createdAt)}</span>
             </div>
           </div>
-        </div>
-      ) : null}
+
+          {isTerminalGame ? (
+            <div
+              className={`mt-4 rounded-md border px-3 py-3 text-sm ${resultTone}`}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="block text-base font-semibold">
+                    {resultTitle}
+                  </span>
+                  <span className="text-base-content/70">{resultDetail}</span>
+                </div>
+
+                <div className="grid gap-1 text-right text-xs text-base-content/60 sm:text-left">
+                  {game.endedAt ? (
+                    <span>Ended {formatTime(game.endedAt)}</span>
+                  ) : null}
+                  {game.startedAt ? (
+                    <span>Started {formatTime(game.startedAt)}</span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {isTableView && isNominationMode && nominationQuestId ? (
+            <div className="mt-4 rounded-md border border-success/30 bg-success/10 px-3 py-3 text-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="block font-medium text-success">
+                    انتخاب تیم ماموریت
+                  </span>
+                  <span className="text-base-content/70">
+                    {selectedTeamSeatIds.length}/{teamSlotCount} صندلی انتخاب
+                    شده
+                  </span>
+                </div>
+
+                <button
+                  className="btn btn-success btn-sm w-fit"
+                  disabled={
+                    selectedTeamSeatIds.length !== teamSlotCount ||
+                    pendingNominationQuestId === nominationQuestId ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() =>
+                    onNominateTeammates(
+                      game.id,
+                      nominationQuestId,
+                      teamSlotCount,
+                    )
+                  }
+                  type="button"
+                >
+                  {pendingNominationQuestId === nominationQuestId ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  ثبت تیم
+                </button>
+              </div>
+
+              {selectedTeamSeats.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedTeamSeats.map((seat) => (
+                    <span className="badge badge-success gap-1" key={seat.id}>
+                      صندلی {seat.number}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {isTableView && isLadyTargetMode && ladyCheckId ? (
+            <div className="mt-4 rounded-md border border-secondary/30 bg-secondary/10 px-3 py-3 text-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="block font-medium text-secondary">
+                    Lady of the Lake
+                  </span>
+                  <span className="text-base-content/70">
+                    {selectedLadyTargetSeat
+                      ? `Target: seat ${selectedLadyTargetSeat.number}`
+                      : "Choose one target seat"}
+                  </span>
+                </div>
+
+                <button
+                  className="btn btn-secondary btn-sm w-fit"
+                  disabled={
+                    !selectedLadyTargetSeatId ||
+                    pendingLadyTargetId === ladyCheckId ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() => onChooseLadyTarget(game.id, ladyCheckId)}
+                  type="button"
+                >
+                  {pendingLadyTargetId === ladyCheckId ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  Check Target
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {isTableView && isAssassinTargetMode && assassinationId ? (
+            <div className="mt-4 rounded-md border border-error/30 bg-error/10 px-3 py-3 text-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="block font-medium text-error">
+                    Assassination
+                  </span>
+                  <span className="text-base-content/70">
+                    {selectedAssassinTargetSeat
+                      ? `Target: seat ${selectedAssassinTargetSeat.number}`
+                      : "Choose Merlin"}
+                  </span>
+                </div>
+
+                <button
+                  className="btn btn-error btn-sm w-fit"
+                  disabled={
+                    !selectedAssassinTargetSeatId ||
+                    pendingAssassinActionId === assassinationId ||
+                    connectionStatus !== "connected"
+                  }
+                  onClick={() =>
+                    onChooseAssassinTarget(game.id, assassinationId)
+                  }
+                  type="button"
+                >
+                  {pendingAssassinActionId === assassinationId ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : null}
+                  Choose Merlin
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {isTableView ? (
+            <div className="mt-5 rounded-lg border border-base-300 bg-base-100 p-4">
+              <div
+                className="mx-auto grid max-w-xl grid-cols-[3rem_minmax(0,1fr)_3rem] grid-rows-[3rem_minmax(14rem,1fr)_3rem] gap-3 sm:grid-cols-[4rem_minmax(0,1fr)_4rem] sm:grid-rows-[4rem_minmax(16rem,1fr)_4rem]"
+                dir="ltr"
+              >
+                <div className="relative col-start-2 flex justify-center gap-2 px-2 before:absolute before:bottom-0 before:left-8 before:right-8 before:h-px before:bg-base-300">
+                  {topSeats.map((seat) => renderSeat(seat, "top"))}
+                </div>
+
+                <div className="relative col-start-1 row-start-2 flex flex-col justify-center gap-2 py-2 before:absolute before:bottom-8 before:right-0 before:top-8 before:w-px before:bg-base-300">
+                  {leftSeats.map((seat) => renderSeat(seat, "left"))}
+                </div>
+
+                <div className="relative col-start-2 row-start-2 flex items-center justify-center rounded-xl border border-base-300 bg-base-200 shadow-inner">
+                  <div className="absolute bottom-6 left-1/2 top-6 w-px -translate-x-1/2 bg-base-300" />
+                  <div className="absolute left-6 right-6 top-1/2 h-px -translate-y-1/2 bg-base-300" />
+                  <div className="relative z-10 grid w-full max-w-52 grid-cols-5 gap-1 px-3 sm:max-w-56 sm:gap-1.5">
+                    {missionRules.map((rule, index) => {
+                      const round = index + 1;
+                      const missionResult = missionResultByRound.get(round);
+                      const isDecidingMission = decidingMissionRound === round;
+                      const resultClasses =
+                        missionResult?.result === "succeeded"
+                          ? "border-success/60 bg-success/15 text-success"
+                          : missionResult?.result === "failed"
+                            ? "border-error/60 bg-error/15 text-error"
+                            : "border-base-300 bg-base-100";
+                      const decidingClasses = isDecidingMission
+                        ? "ring-2 ring-primary ring-offset-2 ring-offset-base-200"
+                        : "";
+
+                      return (
+                        <div
+                          className={`flex aspect-[4/5] min-h-12 flex-col items-center justify-between rounded-md border px-1 py-1.5 text-center shadow-sm ${resultClasses} ${decidingClasses}`}
+                          key={index}
+                          title={
+                            missionResult?.result
+                              ? `Mission ${round}: ${missionResult.result}. Success: ${missionResult.successCount}, fail: ${missionResult.failCount}.`
+                              : `Mission ${round}: ${missionResult?.voteCount ?? 0}/${missionResult?.teamMemberCount ?? rule.players} votes.`
+                          }
+                        >
+                          <span className="text-[0.55rem] font-semibold leading-none text-base-content/50">
+                            {round}
+                          </span>
+                          <span className="text-base font-bold leading-none">
+                            {missionResult?.result === "succeeded"
+                              ? "S"
+                              : missionResult?.result === "failed"
+                                ? "F"
+                                : rule.players}
+                          </span>
+                          <span
+                            className={`text-[0.5rem] font-medium leading-tight ${
+                              missionResult?.result === "succeeded"
+                                ? "text-success"
+                                : "text-error"
+                            }`}
+                          >
+                            {isDecidingMission
+                              ? "Deciding"
+                              : missionResult?.result === "succeeded"
+                                ? "Success"
+                                : missionResult?.result === "failed"
+                                  ? "Failure"
+                                  : `${rule.minimumFailures} fail`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="relative col-start-3 row-start-2 flex flex-col justify-center gap-2 py-2 before:absolute before:bottom-8 before:left-0 before:top-8 before:w-px before:bg-base-300">
+                  {rightSeats.map((seat) => renderSeat(seat, "right"))}
+                </div>
+
+                <div className="relative col-start-2 row-start-3 flex justify-center gap-2 px-2 before:absolute before:left-8 before:right-8 before:top-0 before:h-px before:bg-base-300">
+                  {bottomSeats.map((seat) => renderSeat(seat, "bottom"))}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </>
       ) : null}
     </article>

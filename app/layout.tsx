@@ -41,7 +41,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeInitializer }}
         />
         <UserProvider>
-          <header className="relative z-[1000] h-18 shrink-0">
+          <header className="relative z-[1000] h-10 shrink-0">
             <Navbar />
           </header>
 

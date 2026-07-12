@@ -9,7 +9,7 @@ export default function ProfileDefaultImage({
 }) {
   return (
     <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-      <div className="w-10 rounded-full">
+      <div className="w-8 rounded-full">
         <Image
           alt="profile image"
           role="button"
