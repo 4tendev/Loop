@@ -16,6 +16,7 @@ export default function ProfileDefaultImage({
           tabIndex={0}
           width={48}
           height={48}
+          loading="eager"
           className="rounded-full btn  p-0"
           unoptimized
           src={getProfileImageSrc(profileImage)}
