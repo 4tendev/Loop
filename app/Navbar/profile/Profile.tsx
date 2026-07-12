@@ -45,19 +45,21 @@ export default function Profile({ user }: { user: ApiUser }) {
       />
       <div className="drawer-content">
         <label htmlFor="my-drawer-1" className="">
-          <ProfileDefaultImage profileImage={user.profileImage || "/avatar.png"} />
+          <ProfileDefaultImage
+            profileImage={user.profileImage || "/avatar.png"}
+          />
         </label>
       </div>
+
       <div className="drawer-side z-[1000]">
         <label
           htmlFor="my-drawer-1"
           aria-label="بستن منو"
           className="drawer-overlay"
         ></label>
+
         <ul className="menu bg-base-200 min-h-full w-80 p-4">
-          <li className="menu-title">
-            <span>{user.name}</span>
-          </li>
+          <span className="font-bold">{user.name}</span>
           <li>
             <Link href="/user" onClick={closeDrawer}>
               داشبورد
