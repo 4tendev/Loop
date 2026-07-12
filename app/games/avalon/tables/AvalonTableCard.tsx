@@ -318,7 +318,7 @@ export function AvalonTableCard({
   if (isTableView && isCreator && game.status === "lobby") {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-success px-1.5 py-1 text-[0.65rem] font-bold text-success-content shadow-lg shadow-success/25 disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-success px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-success-content shadow-lg shadow-success/25 disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           !isFull ||
           startingGameId === game.id ||
@@ -331,12 +331,12 @@ export function AvalonTableCard({
         {startingGameId === game.id ? (
           <span className="loading loading-spinner loading-xs" />
         ) : (
-          <span className="text-lg leading-none">▶</span>
+          <span className="text-sm leading-none">▶</span>
         )}
         <span>شروع</span>
       </button>,
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-error/50 bg-error px-1.5 py-1 text-[0.65rem] font-bold text-error-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md border border-error/50 bg-error px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-error-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           cancellingGameId === game.id || connectionStatus !== "connected"
         }
@@ -347,7 +347,7 @@ export function AvalonTableCard({
         {cancellingGameId === game.id ? (
           <span className="loading loading-spinner loading-xs" />
         ) : (
-          <span className="text-lg leading-none">×</span>
+          <span className="text-sm leading-none">×</span>
         )}
         <span>لغو</span>
       </button>,
@@ -357,7 +357,7 @@ export function AvalonTableCard({
   if (isTableView && game.status === "lobby" && ownSeat) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-warning px-1.5 py-1 text-[0.65rem] font-bold text-warning-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-warning px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-warning-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           !selectedSeat ||
           pendingSeatGameId === game.id ||
@@ -367,11 +367,11 @@ export function AvalonTableCard({
         onClick={() => onChangeSeat(game.id)}
         type="button"
       >
-        <span className="text-lg leading-none">↺</span>
+        <span className="text-sm leading-none">↺</span>
         <span>تغییر</span>
       </button>,
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-base-content/25 bg-base-100 px-1.5 py-1 text-[0.65rem] font-bold text-base-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md border border-base-content/25 bg-base-100 px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-base-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           pendingSeatGameId === game.id || connectionStatus !== "connected"
         }
@@ -379,7 +379,7 @@ export function AvalonTableCard({
         onClick={() => onLeaveSeat(game.id)}
         type="button"
       >
-        <span className="text-lg leading-none">○</span>
+        <span className="text-sm leading-none">○</span>
         <span>ترک</span>
       </button>,
     );
@@ -388,7 +388,7 @@ export function AvalonTableCard({
   if (isTableView && game.status === "lobby" && !ownSeat) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-warning px-1.5 py-1 text-[0.65rem] font-bold text-warning-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-warning px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-warning-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           !selectedSeat ||
           pendingSeatGameId === game.id ||
@@ -401,7 +401,7 @@ export function AvalonTableCard({
         {pendingSeatGameId === game.id ? (
           <span className="loading loading-spinner loading-xs" />
         ) : (
-          <span className="text-lg leading-none">◎</span>
+          <span className="text-sm leading-none">◎</span>
         )}
         <span>نشستن</span>
       </button>,
@@ -411,13 +411,13 @@ export function AvalonTableCard({
   if (actionRequired?.type === "avalon.nightCheck") {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-info px-1.5 py-1 text-[0.65rem] font-bold text-info-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-info px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-info-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={connectionStatus !== "connected"}
         key="night-check"
         onClick={() => onNightAlreadyCheck(game.id, actionRequired.id)}
         type="button"
       >
-        <span className="text-lg leading-none">◐</span>
+        <span className="text-sm leading-none">◐</span>
         <span>دیدم</span>
       </button>,
     );
@@ -426,7 +426,7 @@ export function AvalonTableCard({
   if (actionRequired?.type === "avalon.questDecision") {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-success px-1.5 py-1 text-[0.65rem] font-bold text-success-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-success px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-success-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           pendingDecisionQuestId === actionRequired.id ||
           connectionStatus !== "connected"
@@ -435,11 +435,11 @@ export function AvalonTableCard({
         onClick={() => onDecideQuest(game.id, actionRequired.id, "approve")}
         type="button"
       >
-        <span className="text-lg leading-none">✓</span>
+        <span className="text-sm leading-none">✓</span>
         <span>تایید</span>
       </button>,
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-error px-1.5 py-1 text-[0.65rem] font-bold text-error-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-error px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-error-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           pendingDecisionQuestId === actionRequired.id ||
           connectionStatus !== "connected"
@@ -448,7 +448,7 @@ export function AvalonTableCard({
         onClick={() => onDecideQuest(game.id, actionRequired.id, "disapprove")}
         type="button"
       >
-        <span className="text-lg leading-none">✕</span>
+        <span className="text-sm leading-none">✕</span>
         <span>رد</span>
       </button>,
     );
@@ -461,7 +461,7 @@ export function AvalonTableCard({
 
         return (
           <button
-            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 py-1 text-[0.65rem] font-bold disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs ${
+            className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem] ${
               isSuccessVote
                 ? "bg-success text-success-content"
                 : "bg-error text-error-content"
@@ -474,7 +474,7 @@ export function AvalonTableCard({
             onClick={() => onVoteMission(game.id, actionRequired.id, vote)}
             type="button"
           >
-            <span className="text-lg leading-none">◆</span>
+            <span className="text-sm leading-none">◆</span>
             <span>{isSuccessVote ? "موفق" : "شکست"}</span>
           </button>
         );
@@ -485,7 +485,7 @@ export function AvalonTableCard({
   if (isTableView && isNominationMode && nominationQuestId) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-success px-1.5 py-1 text-[0.65rem] font-bold text-success-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-success px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-success-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           selectedTeamSeatIds.length !== teamSlotCount ||
           pendingNominationQuestId === nominationQuestId ||
@@ -497,7 +497,7 @@ export function AvalonTableCard({
         }
         type="button"
       >
-        <span className="text-lg leading-none">
+        <span className="text-sm leading-none">
           {selectedTeamSeatIds.length}/{teamSlotCount}
         </span>
         <span>ثبت تیم</span>
@@ -508,7 +508,7 @@ export function AvalonTableCard({
   if (isTableView && isLadyTargetMode && ladyCheckId) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-info px-1.5 py-1 text-[0.65rem] font-bold text-info-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-info px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-info-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           !selectedLadyTargetSeatId ||
           pendingLadyTargetId === ladyCheckId ||
@@ -518,7 +518,7 @@ export function AvalonTableCard({
         onClick={() => onChooseLadyTarget(game.id, ladyCheckId)}
         type="button"
       >
-        <span className="text-lg leading-none">☾</span>
+        <span className="text-sm leading-none">☾</span>
         <span>بررسی</span>
       </button>,
     );
@@ -527,7 +527,7 @@ export function AvalonTableCard({
   if (isTableView && isAssassinTargetMode && assassinationId) {
     actionButtons.push(
       <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md bg-error px-1.5 py-1 text-[0.65rem] font-bold text-error-content disabled:opacity-45 sm:px-2 sm:py-2 sm:text-xs"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-error px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-error-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
           !selectedAssassinTargetSeatId ||
           pendingAssassinActionId === assassinationId ||
@@ -537,7 +537,7 @@ export function AvalonTableCard({
         onClick={() => onChooseAssassinTarget(game.id, assassinationId)}
         type="button"
       >
-        <span className="text-lg leading-none">†</span>
+        <span className="text-sm leading-none">†</span>
         <span>ترور</span>
       </button>,
     );
