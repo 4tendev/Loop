@@ -632,9 +632,9 @@ export function AvalonTableCard({
                   const round = index + 1;
                   const missionResult = missionResultByRound.get(round);
                   const failMarks = missionResult
-                    ? "X".repeat(missionResult.failCount)
+                    ? "x".repeat(missionResult.failCount)
                     : rule.minimumFailures > 1
-                      ? "XX"
+                      ? "xx"
                       : "";
                   const resultClasses =
                     missionResult?.result === "succeeded"
@@ -659,7 +659,7 @@ export function AvalonTableCard({
                         </span>
                       ) : null}
                       {failMarks ? (
-                        <span className="text-xs font-black leading-none text-error sm:text-sm">
+                        <span className="text-xs font-black leading-none  sm:text-sm">
                           {failMarks}
                         </span>
                       ) : null}
