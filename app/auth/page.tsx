@@ -6,6 +6,8 @@ import {
   sessionCookieName,
 } from "@/lib/auth/session";
 import { getTelegramBotUsername } from "@/lib/auth/telegram";
+import { getPostgresPool } from "@/lib/postgres";
+import type { AuthProvider } from "@/types/user";
 import AuthClient from "./AuthClient";
 import { getPublicTelegramAuthOrigin } from "./telegram/auth-origin";
 
@@ -29,8 +31,28 @@ export default async function Auth({ searchParams }: AuthPageProps) {
     redirect("/auth");
   }
 
+  const authenticatedMethods =
+    isLinking && session
+      ? (
+          await getPostgresPool().query<{ provider: AuthProvider }>(
+            `SELECT DISTINCT provider
+             FROM user_auth_methods
+             WHERE user_id = $1`,
+            [session.user.id],
+          )
+        ).rows
+          .map(({ provider }) => provider)
+          .filter(
+            (provider): provider is "email" | "telegram" | "device" =>
+              provider === "email" ||
+              provider === "telegram" ||
+              provider === "device",
+          )
+      : [];
+
   return (
     <AuthClient
+      authenticatedMethods={authenticatedMethods}
       telegramAuthOrigin={getPublicTelegramAuthOrigin(headerStore)}
       telegramBotUsername={getTelegramBotUsername()}
     />

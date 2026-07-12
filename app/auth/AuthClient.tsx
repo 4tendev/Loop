@@ -11,22 +11,31 @@ type AuthMethod = "email" | "telegram" | "device";
 type AuthClientProps = {
   telegramAuthOrigin: string;
   telegramBotUsername: string;
+  authenticatedMethods: AuthMethod[];
 };
 
 export default function AuthClient({
   telegramAuthOrigin,
   telegramBotUsername,
+  authenticatedMethods,
 }: AuthClientProps) {
   const searchParams = useSearchParams();
   const telegramError = searchParams.get("telegramError");
   const linking = searchParams.get("link") === "1";
   const requestedMethod = searchParams.get("method");
-  const [method, setMethod] = useState<AuthMethod>(
+  const disabledMethods = new Set(linking ? authenticatedMethods : []);
+  const preferredMethod: AuthMethod =
     telegramError || requestedMethod === "telegram"
       ? "telegram"
       : requestedMethod === "device"
         ? "device"
-        : "email",
+        : "email";
+  const [method, setMethod] = useState<AuthMethod | null>(() =>
+    disabledMethods.has(preferredMethod)
+      ? (["email", "telegram", "device"] as const).find(
+          (candidate) => !disabledMethods.has(candidate),
+        ) ?? null
+      : preferredMethod,
   );
 
   return (
@@ -45,6 +54,7 @@ export default function AuthClient({
               <button
                 className={`btn join-item ${method === "email" ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setMethod("email")}
+                disabled={disabledMethods.has("email")}
                 type="button"
               >
                 ایمیل
@@ -52,6 +62,7 @@ export default function AuthClient({
               <button
                 className={`btn join-item ${method === "telegram" ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setMethod("telegram")}
+                disabled={disabledMethods.has("telegram")}
                 type="button"
               >
                 تلگرام
@@ -59,13 +70,18 @@ export default function AuthClient({
               <button
                 className={`btn join-item ${method === "device" ? "btn-primary" : "btn-outline"}`}
                 onClick={() => setMethod("device")}
+                disabled={disabledMethods.has("device")}
                 type="button"
               >
                 دستگاه
               </button>
             </div>
 
-            {method === "email" ? (
+            {method === null ? (
+              <p className="text-sm text-base-content/70">
+                همه روش‌های ورود به این حساب متصل هستند.
+              </p>
+            ) : method === "email" ? (
               <EmailAuth embedded linking={linking} />
             ) : method === "telegram" ? (
               <TelegramAuth
