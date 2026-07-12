@@ -83,7 +83,7 @@ export type AvalonMission = {
 };
 
 export type AvalonGameConfig = {
-  playerCount: 6 | 7 | 8 | 10 | 9;
+  playerCount: 7 | 8 | 10 | 9;
   useOberon: boolean;
   useLadyOfTheLake: boolean;
   roleExposing: boolean;
