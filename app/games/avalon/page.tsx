@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { playerCounts } from "@/types/avalon";
 
 export default function AvalonPage() {
   return (
