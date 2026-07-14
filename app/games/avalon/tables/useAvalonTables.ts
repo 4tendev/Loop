@@ -11,7 +11,9 @@ import type {
 } from "./types";
 
 const MESSAGE_VISIBLE_MS = 4000;
-const RECONNECT_INTERVAL_MS = 20000;
+const FAST_RECONNECT_ATTEMPTS = 5;
+const FAST_RECONNECT_INTERVAL_MS = 2000;
+const RECONNECT_INTERVAL_MS = 10000;
 const ACTION_TIMEOUT_MS = 5000;
 const SOCKET_UNAVAILABLE_MESSAGE = "اتصال وب‌سوکت فعال نیست.";
 
@@ -111,6 +113,7 @@ export function useAvalonTables(tableId?: string) {
   useEffect(() => {
     const url = getAvalonWsUrl(tableId);
     let shouldReconnect = true;
+    let reconnectAttempts = 0;
 
     function clearReconnectTimeout() {
       if (reconnectTimeoutRef.current) {
@@ -124,13 +127,19 @@ export function useAvalonTables(tableId?: string) {
         return;
       }
 
+      const reconnectInterval =
+        reconnectAttempts < FAST_RECONNECT_ATTEMPTS
+          ? FAST_RECONNECT_INTERVAL_MS
+          : RECONNECT_INTERVAL_MS;
+      reconnectAttempts += 1;
+
       reconnectTimeoutRef.current = setTimeout(() => {
         reconnectTimeoutRef.current = null;
 
         if (shouldReconnect) {
           connect();
         }
-      }, RECONNECT_INTERVAL_MS);
+      }, reconnectInterval);
     }
 
     function handleActionResult(message: AvalonWsMessage) {
@@ -280,6 +289,7 @@ export function useAvalonTables(tableId?: string) {
 
       socket.addEventListener("open", () => {
         clearReconnectTimeout();
+        reconnectAttempts = 0;
         setConnectionStatus("connected");
         setError(null);
         socket.send(JSON.stringify({ type: "refresh" }));
