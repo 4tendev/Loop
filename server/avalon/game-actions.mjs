@@ -2001,6 +2001,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
         SELECT
           mission.id,
           current_seat.id AS "seatId",
+          current_seat.role AS "seatRole",
           game.player_count AS "playerCount",
           count(team_member.seat_id)::integer AS "teamMemberCount",
           (
@@ -2041,7 +2042,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
               existing_vote.mission_id = mission.id
               AND existing_vote.seat_id = current_seat.id
           )
-        GROUP BY mission.id, current_seat.id, game.id, phase.id
+        GROUP BY mission.id, current_seat.id, current_seat.role, game.id, phase.id
       `,
       [gameId, missionId, userId],
     );
@@ -2052,6 +2053,14 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
       return {
         ok: false,
         message: "فقط اعضای تیم ماموریت که هنوز رأی نداده‌اند می‌توانند رأی بدهند",
+      };
+    }
+
+    if (vote === "fail" && !AVALON_EVIL_ROLES.has(mission.seatRole)) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        message: "بازیکنان تیم خیر نمی‌توانند رأی شکست برای ماموریت ثبت کنند",
       };
     }
 

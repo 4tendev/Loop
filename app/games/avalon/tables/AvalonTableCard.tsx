@@ -71,6 +71,8 @@ import {
 } from "./avalonTableCardConstants";
 import { AvalonTableSeat } from "./AvalonTableSeat";
 
+const lobbyJoinGuideStorageKey = "avalon:lobby-join-guide-understood:v1";
+
 export function AvalonTableCard({
   game,
   tableId,
@@ -129,8 +131,27 @@ export function AvalonTableCard({
     }
 
     lobbyJoinGuideGameIdRef.current = game.id;
+
+    try {
+      if (window.localStorage.getItem(lobbyJoinGuideStorageKey) === "true") {
+        return;
+      }
+    } catch {
+      // Keep showing the guide when browser storage is unavailable.
+    }
+
     setIsLobbyJoinGuideOpen(true);
   }, [game.id, game.status, isTableView, ownSeat]);
+
+  function acknowledgeLobbyJoinGuide() {
+    try {
+      window.localStorage.setItem(lobbyJoinGuideStorageKey, "true");
+    } catch {
+      // Closing the guide should still work when browser storage is unavailable.
+    }
+
+    setIsLobbyJoinGuideOpen(false);
+  }
 
   useEffect(() => {
     if (!isLobbyJoinGuideOpen) return;
@@ -324,6 +345,9 @@ export function AvalonTableCard({
       .slice()
       .reverse()
       .find((phase) => phase.ladyCheck?.targetSide)?.ladyCheck ?? null;
+  const [hiddenLadySideId, setHiddenLadySideId] = useState<string | null>(null);
+  const isLatestLadySideHidden =
+    hiddenLadySideId === latestLadyReveal?.id;
   const ladyPhaseSummaries = game.phases
     .filter((phase) => phase.ladyCheck)
     .map((phase, index) => {
@@ -834,16 +858,76 @@ export function AvalonTableCard({
 
           <div className="z-30 shrink-0 border-t border-base-content/15 bg-base-100/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-base-content/20">
             {latestLadyReveal?.targetSide ? (
-              <div
-                className="mb-2 flex items-center justify-between rounded-md border border-info/40 bg-info/15 px-3 py-2 text-xs font-bold text-info"
+              <button
+                aria-label={
+                  isLatestLadySideHidden
+                    ? "نمایش سمت هدف بانوی دریاچه"
+                    : "پنهان کردن سمت هدف بانوی دریاچه"
+                }
+                aria-pressed={isLatestLadySideHidden}
+                className="mb-2 flex w-full items-center justify-between rounded-md border border-info/40 bg-info/15 px-3 py-2 text-xs font-bold text-info transition hover:bg-info/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info"
+                onClick={() =>
+                  setHiddenLadySideId((current) =>
+                    current === latestLadyReveal.id
+                      ? null
+                      : latestLadyReveal.id,
+                  )
+                }
+                title={
+                  isLatestLadySideHidden
+                    ? "برای نمایش سمت کلیک کنید"
+                    : "برای پنهان کردن سمت کلیک کنید"
+                }
+                type="button"
               >
                 <span>صندلی {latestLadyReveal.targetSeatNumber}</span>
-                <span className="rounded-full bg-base-content/10 px-2 py-0.5">
-                  {latestLadyReveal.targetSide === "good"
-                    ? "تیم خیر"
-                    : "تیم شر"}
+                <span className="flex items-center gap-1.5 rounded-full bg-base-content/10 px-2 py-0.5">
+                  {isLatestLadySideHidden ? (
+                    <svg
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5 0 9 4.4 10 8a12.7 12.7 0 01-2.1 4.1M6.6 6.6A13 13 0 002 12c1 3.6 5 8 10 8a10 10 0 004.1-.9"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M2 12c1.2-3.6 5.1-8 10-8s8.8 4.4 10 8c-1.2 3.6-5.1 8-10 8S3.2 15.6 2 12z"
+                        stroke="currentColor"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                      />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  )}
+                  <span>
+                    {isLatestLadySideHidden
+                      ? "••••"
+                      : latestLadyReveal.targetSide === "good"
+                        ? "تیم خیر"
+                        : "تیم شر"}
+                  </span>
                 </span>
-              </div>
+              </button>
             ) : null}
 
             {ownSeat && game.startedAt ? (
@@ -1329,7 +1413,7 @@ export function AvalonTableCard({
             </p>
             <button
               className="btn btn-primary mt-5 w-full"
-              onClick={() => setIsLobbyJoinGuideOpen(false)}
+              onClick={acknowledgeLobbyJoinGuide}
               type="button"
             >
               متوجه شدم

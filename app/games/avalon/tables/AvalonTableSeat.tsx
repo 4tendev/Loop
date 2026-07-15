@@ -87,10 +87,10 @@ export function AvalonTableSeat(props: AvalonTableSeatProps) {
   const sleepingBadge = isSleeping ? (
     <span
       aria-label="در انتظار تأیید بررسی شب"
-      className="pointer-events-none absolute -top-3 left-1/4 z-50 -translate-x-1/2 text-xs leading-none drop-shadow-md"
+      className="pointer-events-none absolute -top-3 left-1/5 z-50 -translate-x-1/2 text-xs leading-none drop-shadow-md "
       title="این بازیکن هنوز بررسی شب را تأیید نکرده است"
     >
-      💤
+      😴
     </span>
   ) : null;
   const decisionBadge = revealedQuestDecision ? (
