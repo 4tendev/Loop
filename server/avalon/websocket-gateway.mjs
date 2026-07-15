@@ -122,10 +122,20 @@ export function createAvalonWebSocketGateway({
     });
 
     socket.on("close", () => {
-      clients.delete(socket);
+      handleClientDisconnect(socket);
     });
     socket.on("error", () => {
-      clients.delete(socket);
+      handleClientDisconnect(socket);
+    });
+  }
+
+  function handleClientDisconnect(socket) {
+    if (!clients.delete(socket)) {
+      return;
+    }
+
+    broadcastActiveGames().catch((error) => {
+      console.error("Failed to update Avalon player presence", error);
     });
   }
 
@@ -184,18 +194,30 @@ export function createAvalonWebSocketGateway({
         sanitizePhaseForClient(phase, ownSeat, game),
       ),
       seats: game.seats.map(({ privateMessage, actionRequired, role, ...seat }) => {
+        const sanitizedSeat = {
+          ...seat,
+          player: seat.player
+            ? {
+                ...seat.player,
+                isOnline: Array.from(clients).some(
+                  (client) => client.user?.id === seat.player.id,
+                ),
+              }
+            : null,
+        };
+
         if (
           canSeeAllRoles ||
           (canSeeEvilRoles && AVALON_EVIL_ROLES.has(role)) ||
           (canSeeOwnRole && seat.id === ownSeat.id)
         ) {
           return {
-            ...seat,
+            ...sanitizedSeat,
             role,
           };
         }
 
-        return seat;
+        return sanitizedSeat;
       }),
     };
   }

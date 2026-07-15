@@ -48,6 +48,16 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
                     SELECT count(*)
                     FROM avalon_night_checks night_check
                     WHERE night_check.night_id = night.id
+                  ),
+                  'checkedSeatIds', COALESCE(
+                    (
+                      SELECT json_agg(night_check.seat_id)
+                      FROM avalon_night_checks night_check
+                      WHERE
+                        night_check.night_id = night.id
+                        AND night_check.is_checked = true
+                    ),
+                    '[]'::json
                   )
                 )
               END,

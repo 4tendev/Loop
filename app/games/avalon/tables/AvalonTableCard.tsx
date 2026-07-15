@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 import {
@@ -115,6 +115,33 @@ export function AvalonTableCard({
   const selectedSeat = selectedSeatId
     ? game.seats.find((seat) => seat.id === selectedSeatId)
     : null;
+  const [isLobbyJoinGuideOpen, setIsLobbyJoinGuideOpen] = useState(false);
+  const lobbyJoinGuideGameIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      !isTableView ||
+      game.status !== "lobby" ||
+      ownSeat ||
+      lobbyJoinGuideGameIdRef.current === game.id
+    ) {
+      return;
+    }
+
+    lobbyJoinGuideGameIdRef.current = game.id;
+    setIsLobbyJoinGuideOpen(true);
+  }, [game.id, game.status, isTableView, ownSeat]);
+
+  useEffect(() => {
+    if (!isLobbyJoinGuideOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsLobbyJoinGuideOpen(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLobbyJoinGuideOpen]);
   const isCreator = userId === game.creator.id || wsUserId === game.creator.id;
   const isFull = game.occupiedSeatCount === game.config.playerCount;
   const isTerminalGame =
@@ -269,6 +296,21 @@ export function AvalonTableCard({
   const lastKingSeatNumber = latestQuest?.kingSeatNumber ?? null;
   const activeQuest =
     latestPhase?.type === "quest" ? (latestPhase.quest ?? null) : null;
+  const activeNight =
+    latestPhase?.type === "night" ? (latestPhase.night ?? null) : null;
+  const checkedNightSeatIds = new Set(activeNight?.checkedSeatIds ?? []);
+  const sleepingSeatIds = new Set(
+    activeNight
+      ? game.seats
+          .filter(
+            (seat) => seat.player && !checkedNightSeatIds.has(seat.id),
+          )
+          .map((seat) => seat.id)
+      : [],
+  );
+  const hasOwnSeatCheckedNight = ownSeat
+    ? checkedNightSeatIds.has(ownSeat.id)
+    : false;
   const isAssassinationPhase = latestPhase?.type === "assassination";
   const activeQuestTeamSeatNumbers = new Set(
     activeQuest?.teamMemberSeatNumbers ?? [],
@@ -278,6 +320,37 @@ export function AvalonTableCard({
       .slice()
       .reverse()
       .find((phase) => phase.ladyCheck?.targetSide)?.ladyCheck ?? null;
+  const ladyPhaseSummaries = game.phases
+    .filter((phase) => phase.ladyCheck)
+    .map((phase, index) => {
+      const ladyCheck = phase.ladyCheck!;
+
+      return {
+        id: phase.id,
+        phaseNumber: index + 1,
+        ladySeat: game.seats.find(
+          (seat) => seat.id === ladyCheck.ladySeatId,
+        ),
+        ladySeatNumber: ladyCheck.ladySeatNumber,
+        targetSeat: game.seats.find(
+          (seat) => seat.id === ladyCheck.targetSeatId,
+        ),
+        targetSeatNumber: ladyCheck.targetSeatNumber,
+        targetSide: ladyCheck.targetSide,
+      };
+    });
+  const [isLadySummaryOpen, setIsLadySummaryOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLadySummaryOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsLadySummaryOpen(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLadySummaryOpen]);
   const latestNightSummary =
     game.phases
       .slice()
@@ -333,6 +406,7 @@ export function AvalonTableCard({
     lastKingSeatNumber,
     lastKingPlayerName: latestQuest?.kingPlayerName,
     revealedQuestDecisions,
+    sleepingSeatIds,
     onSelectSeat,
     onToggleTeamSeat,
     onSelectLadyTarget,
@@ -636,16 +710,29 @@ export function AvalonTableCard({
                 src="/avalon/avalon_characters/Oberon.png"
                 title="Oberon"
               />
-              <img
-                alt="Lady of the Lake"
-                className={`h-7 w-7 rounded-full border object-cover ${
+              <button
+                aria-expanded={isLadySummaryOpen}
+                aria-haspopup="dialog"
+                className="rounded-full disabled:cursor-default"
+                disabled={!game.config.useLadyOfTheLake}
+                onClick={() => setIsLadySummaryOpen(true)}
+                title={
                   game.config.useLadyOfTheLake
-                    ? "border-info opacity-100"
-                    : "border-base-content/20 opacity-35 grayscale"
-                }`}
-                src="/avalon/avalon_characters/LadyOfTheLake.png"
-                title="Lady of the Lake"
-              />
+                    ? "مشاهده تاریخچه بانوی دریاچه"
+                    : "بانوی دریاچه غیرفعال است"
+                }
+                type="button"
+              >
+                <img
+                  alt="بانوی دریاچه"
+                  className={`h-7 w-7 rounded-full border object-cover ${
+                    game.config.useLadyOfTheLake
+                      ? "border-info opacity-100 transition hover:scale-110 hover:ring-2 hover:ring-info/35"
+                      : "border-base-content/20 opacity-35 grayscale"
+                  }`}
+                  src="/avalon/avalon_characters/LadyOfTheLake.png"
+                />
+              </button>
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black ${
                   game.config.roleExposing
@@ -747,55 +834,57 @@ export function AvalonTableCard({
                 className="mb-2 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-xs"
                 open
               >
-              <summary className="cursor-pointer select-none font-bold text-warning">
-                اطلاعات شب
-              </summary>
-              <div className="mt-2 grid gap-2">
-                {latestNightSummary ? (
-                  <div className="flex flex-wrap items-center gap-2 text-base-content/75">
-                    <span className="rounded-full bg-base-content/10 px-2 py-0.5 font-bold">
-                      صندلی {latestNightSummary.ownSeatNumber}
-                    </span>
-                    <span>
-                      نقش شما : {roleLabels[latestNightSummary.ownRole]}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-base-content/60">
-                    اطلاعات شب برای صندلی شما وجود ندارد.
-                  </p>
-                )}
+                <summary className="cursor-pointer select-none font-bold text-warning">
+                  اطلاعات شب
+                </summary>
+                <div className="mt-2 grid gap-2">
+                  {latestNightSummary ? (
+                    <div className="flex flex-wrap items-center gap-2 text-base-content/75">
+                      <span className="rounded-full bg-base-content/10 px-2 py-0.5 font-bold">
+                        صندلی {latestNightSummary.ownSeatNumber}
+                      </span>
+                      <span>
+                        نقش شما : {roleLabels[latestNightSummary.ownRole]}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-base-content/60">
+                      اطلاعات شب برای صندلی شما وجود ندارد.
+                    </p>
+                  )}
 
-                {nightRevealSeats.length > 0 ? (
-                  <div className="flex gap-0.25 ">
-                    {nightRevealSeats.map((seat) => (
-                      <div
-                        className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-base-content/10 bg-base-100/75 px-2 py-1.5"
-                        key={seat.seatId}
-                      >
-                        <div className="min-w-0">
-                          <span className="block truncate text-[0.6rem]">
-                             {seat.seatNumber}
-                            {seat.player?.name ? ` - ${seat.player.name.slice(0,12)}` : ""}
-                          </span>
-                          <span className="block truncate text-[0.65rem] text-base-content/55">
-                            {[
-                              seat.side ? sideLabels[seat.side] : null,
-                              seat.role ? roleLabels[seat.role] : null,
-                            ]
-                              .filter(Boolean)
-                              .join(" / ") || "صندلی آشکارشده"}
-                          </span>
+                  {nightRevealSeats.length > 0 ? (
+                    <div className="flex gap-0.25 ">
+                      {nightRevealSeats.map((seat) => (
+                        <div
+                          className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-base-content/10 bg-base-100/75 px-2 py-1.5"
+                          key={seat.seatId}
+                        >
+                          <div className="min-w-0">
+                            <span className="block truncate text-[0.6rem]">
+                              {seat.seatNumber}
+                              {seat.player?.name
+                                ? ` - ${seat.player.name.slice(0, 12)}`
+                                : ""}
+                            </span>
+                            <span className="block truncate text-[0.65rem] text-base-content/55">
+                              {[
+                                seat.side ? sideLabels[seat.side] : null,
+                                seat.role ? roleLabels[seat.role] : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" / ") || "صندلی آشکارشده"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : latestNightSummary ? (
-                  <p className="text-base-content/60">
-                    برای این نقش صندلی دیگری آشکار نمی‌شود.
-                  </p>
-                ) : null}
-              </div>
+                      ))}
+                    </div>
+                  ) : latestNightSummary ? (
+                    <p className="text-base-content/60">
+                      برای این نقش صندلی دیگری آشکار نمی‌شود.
+                    </p>
+                  ) : null}
+                </div>
               </details>
             ) : null}
 
@@ -1196,6 +1285,151 @@ export function AvalonTableCard({
             </div>
           ) : null}
         </>
+      ) : null}
+
+      {isTableView && game.status === "lobby" && isLobbyJoinGuideOpen ? (
+        <div
+          aria-labelledby="lobby-join-guide-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+          dir="rtl"
+          onClick={() => setIsLobbyJoinGuideOpen(false)}
+          role="dialog"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-primary/30 bg-base-100 p-5 text-center shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-3xl text-primary">
+              ♙
+            </div>
+            <h2 className="text-lg font-black" id="lobby-join-guide-title">
+              به بازی بپیوندید
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-base-content/70">
+              برای شرکت در بازی، یکی از صندلی‌های خالی را انتخاب کنید و سپس
+              روی دکمه «نشستن» بزنید.
+            </p>
+            <button
+              className="btn btn-primary mt-5 w-full"
+              onClick={() => setIsLobbyJoinGuideOpen(false)}
+              type="button"
+            >
+              متوجه شدم
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {isTableView &&
+      game.config.useLadyOfTheLake &&
+      isLadySummaryOpen ? (
+        <div
+          aria-labelledby="lady-summary-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+          dir="rtl"
+          onClick={() => setIsLadySummaryOpen(false)}
+          role="dialog"
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-xl border border-info/30 bg-base-100 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 border-b border-base-300 px-4 py-3">
+              <img
+                alt=""
+                className="h-10 w-10 rounded-full border border-info object-cover"
+                src="/avalon/avalon_characters/LadyOfTheLake.png"
+              />
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold" id="lady-summary-title">
+                  تاریخچه بانوی دریاچه
+                </h2>
+                <p className="text-xs text-base-content/55">
+                  بانو و هدف او در هر مرحله
+                </p>
+              </div>
+              <button
+                aria-label="بستن تاریخچه بانوی دریاچه"
+                className="btn btn-circle btn-ghost btn-sm"
+                onClick={() => setIsLadySummaryOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[min(70vh,28rem)] overflow-y-auto p-4">
+              {ladyPhaseSummaries.length > 0 ? (
+                <ol className="grid gap-2">
+                  {ladyPhaseSummaries.map((summary) => (
+                    <li
+                      className="rounded-lg border border-base-300 bg-base-200/60 p-3"
+                      key={summary.id}
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-xs font-black uppercase tracking-wide text-info">
+                          مرحله {summary.phaseNumber}
+                        </span>
+                        {summary.targetSide ? (
+                          <span
+                            className={`badge badge-sm ${
+                              summary.targetSide === "good"
+                                ? "badge-success"
+                                : "badge-error"
+                            }`}
+                          >
+                            {sideLabels[summary.targetSide]}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-sm">
+                        <div className="min-w-0">
+                          <span className="block text-[0.65rem] text-base-content/50">
+                            بانو
+                          </span>
+                          <span className="block truncate font-bold">
+                            {summary.ladySeat?.player?.name ??
+                              `صندلی ${summary.ladySeatNumber}`}
+                          </span>
+                          {summary.ladySeat?.player ? (
+                            <span className="text-xs text-base-content/55">
+                              صندلی {summary.ladySeatNumber}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span aria-hidden="true" className="text-info">
+                          ←
+                        </span>
+                        <div className="min-w-0 text-right">
+                          <span className="block text-[0.65rem] text-base-content/50">
+                            هدف
+                          </span>
+                          <span className="block truncate font-bold">
+                            {summary.targetSeat?.player?.name ??
+                              (summary.targetSeatNumber
+                                ? `صندلی ${summary.targetSeatNumber}`
+                                : "هنوز انتخاب نشده")}
+                          </span>
+                          {summary.targetSeat?.player ? (
+                            <span className="text-xs text-base-content/55">
+                              صندلی {summary.targetSeatNumber}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="rounded-lg border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/55">
+                  هنوز مرحله بانوی دریاچه‌ای انجام نشده است.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       ) : null}
     </article>
   );

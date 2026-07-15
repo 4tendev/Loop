@@ -16,6 +16,7 @@ export type AvalonWsSeat = {
     id: string;
     name: string;
     profileImage: string;
+    isOnline: boolean;
   } | null;
 };
 
@@ -46,6 +47,7 @@ export type AvalonWsPhase = {
   night: {
     checkedCount: number;
     totalCount: number;
+    checkedSeatIds: string[];
     summary: {
       ownSeatId: string;
       ownSeatNumber: number;
