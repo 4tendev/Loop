@@ -17,3 +17,100 @@ html {
 body {
   font-family: inherit;
 }
+
+@keyframes avalon-winner-glow {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0.45rem color-mix(in oklab, var(--avalon-winner-color) 65%, transparent),
+      0 0 1rem color-mix(in oklab, var(--avalon-winner-color) 35%, transparent);
+  }
+  50% {
+    filter: brightness(1.18);
+    box-shadow: 0 0 0.8rem color-mix(in oklab, var(--avalon-winner-color) 90%, transparent),
+      0 0 1.6rem color-mix(in oklab, var(--avalon-winner-color) 55%, transparent);
+  }
+}
+
+@keyframes avalon-winner-ring {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes avalon-winner-sparkle {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-45%, -45%) scale(0.75) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-45%, -45%) scale(1.2) rotate(25deg);
+  }
+}
+
+.avalon-winner-seat {
+  --avalon-winner-color: var(--color-warning);
+  isolation: isolate;
+  border-color: transparent;
+  animation: avalon-winner-glow 1.8s ease-in-out infinite;
+}
+
+.avalon-winner-seat[data-winner-side="good"] {
+  --avalon-winner-color: var(--color-success);
+}
+
+.avalon-winner-seat[data-winner-side="evil"] {
+  --avalon-winner-color: var(--color-error);
+}
+
+.avalon-winner-seat::before {
+  position: absolute;
+  z-index: 0;
+  inset: -0.25rem;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    var(--avalon-winner-color),
+    var(--color-warning),
+    white,
+    var(--avalon-winner-color),
+    var(--color-warning),
+    white,
+    var(--avalon-winner-color)
+  );
+  content: "";
+  animation: avalon-winner-ring 2.8s linear infinite;
+}
+
+.avalon-winner-sparkles {
+  position: absolute;
+  z-index: 50;
+  left: 4%;
+  top: 5%;
+  color: var(--color-warning);
+  font-size: 1.1rem;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 0 0.5rem white, 0 0 0.8rem var(--color-warning);
+  animation: avalon-winner-sparkle 1.15s ease-in-out infinite;
+}
+
+.avalon-winner-sparkles::after {
+  position: absolute;
+  left: 3.75rem;
+  top: 3.5rem;
+  content: "✦";
+  font-size: 0.7rem;
+  animation: avalon-winner-sparkle 1.15s 0.55s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avalon-winner-seat,
+  .avalon-winner-seat::before,
+  .avalon-winner-sparkles,
+  .avalon-winner-sparkles::after {
+    animation: none;
+  }
+}

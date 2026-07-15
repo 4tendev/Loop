@@ -312,6 +312,10 @@ export function AvalonTableCard({
     ? checkedNightSeatIds.has(ownSeat.id)
     : false;
   const isAssassinationPhase = latestPhase?.type === "assassination";
+  const activeLadySeatId =
+    latestPhase?.type === "ladyCheck"
+      ? (latestPhase.ladyCheck?.ladySeatId ?? null)
+      : null;
   const activeQuestTeamSeatNumbers = new Set(
     activeQuest?.teamMemberSeatNumbers ?? [],
   );
@@ -332,10 +336,12 @@ export function AvalonTableCard({
           (seat) => seat.id === ladyCheck.ladySeatId,
         ),
         ladySeatNumber: ladyCheck.ladySeatNumber,
-        targetSeat: game.seats.find(
-          (seat) => seat.id === ladyCheck.targetSeatId,
-        ),
-        targetSeatNumber: ladyCheck.targetSeatNumber,
+        targetSeat: phase.endedAt
+          ? game.seats.find((seat) => seat.id === ladyCheck.targetSeatId)
+          : undefined,
+        targetSeatNumber: phase.endedAt
+          ? ladyCheck.targetSeatNumber
+          : null,
         targetSide: ladyCheck.targetSide,
       };
     });
@@ -403,6 +409,7 @@ export function AvalonTableCard({
     teamSlotCount,
     isTerminalGame,
     isAssassinationPhase,
+    activeLadySeatId,
     lastKingSeatNumber,
     lastKingPlayerName: latestQuest?.kingPlayerName,
     revealedQuestDecisions,
@@ -691,6 +698,20 @@ export function AvalonTableCard({
       {isTableView ? (
         <>
           <div className="shrink-0 px-3 pt-2">
+            {game.status === "completed" && game.winnerSide ? (
+              <div
+                className={`mb-2 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-black shadow-lg ${
+                  game.winnerSide === "good"
+                    ? "border-success/50 bg-success/15 text-success shadow-success/15"
+                    : "border-error/50 bg-error/15 text-error shadow-error/15"
+                }`}
+                role="status"
+              >
+                <span aria-hidden="true">✦</span>
+                <span>تیم {sideLabels[game.winnerSide]} برنده شد</span>
+                <span aria-hidden="true">✦</span>
+              </div>
+            ) : null}
             <div className="mb-2 grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-2">
               <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-black text-warning">
                 {game.occupiedSeatCount}/{game.config.playerCount}
@@ -814,11 +835,7 @@ export function AvalonTableCard({
           <div className="z-30 shrink-0 border-t border-base-content/15 bg-base-100/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl shadow-base-content/20">
             {latestLadyReveal?.targetSide ? (
               <div
-                className={`mb-2 flex items-center justify-between rounded-md border px-3 py-2 text-xs font-bold ${
-                  latestLadyReveal.targetSide === "good"
-                    ? "border-success/40 bg-success/15 text-success"
-                    : "border-error/40 bg-error/15 text-error"
-                }`}
+                className="mb-2 flex items-center justify-between rounded-md border border-info/40 bg-info/15 px-3 py-2 text-xs font-bold text-info"
               >
                 <span>صندلی {latestLadyReveal.targetSeatNumber}</span>
                 <span className="rounded-full bg-base-content/10 px-2 py-0.5">
@@ -1373,13 +1390,7 @@ export function AvalonTableCard({
                           مرحله {summary.phaseNumber}
                         </span>
                         {summary.targetSide ? (
-                          <span
-                            className={`badge badge-sm ${
-                              summary.targetSide === "good"
-                                ? "badge-success"
-                                : "badge-error"
-                            }`}
-                          >
+                          <span className="badge badge-info badge-sm">
                             {sideLabels[summary.targetSide]}
                           </span>
                         ) : null}
