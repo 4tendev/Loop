@@ -228,8 +228,23 @@ export function AvalonTableCard({
       failCount: phase.mission?.failCount ?? 0,
       voteCount: phase.mission?.voteCount ?? 0,
       teamMemberCount: phase.mission?.teamMemberCount ?? 0,
+      teamMembers: phase.mission?.teamMembers ?? [],
       result: phase.mission?.result ?? null,
     }));
+  type MissionSummary = (typeof missionPhaseResults)[number];
+  const [selectedMissionSummary, setSelectedMissionSummary] =
+    useState<MissionSummary | null>(null);
+
+  useEffect(() => {
+    if (!selectedMissionSummary) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedMissionSummary(null);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedMissionSummary]);
   const decidingMissionRound = (() => {
     let succeededCount = 0;
     let failedCount = 0;
@@ -828,13 +843,28 @@ export function AvalonTableCard({
                         : "border-warning/50 bg-base-100 text-warning";
 
                   return (
-                    <div
-                      className={`absolute z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 text-center shadow-lg sm:h-11 sm:w-11 ${resultClasses}`}
+                    <button
+                      aria-haspopup={missionResult?.result ? "dialog" : undefined}
+                      className={`absolute z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 text-center shadow-lg sm:h-11 sm:w-11 ${resultClasses} ${missionResult?.result ? "cursor-pointer transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" : "cursor-default"}`}
+                      disabled={!missionResult?.result}
                       key={index}
-                      title={`ماموریت ${round}: ${rule.players} نفر`}
+                      onClick={() => missionResult?.result && setSelectedMissionSummary(missionResult)}
+                      title={missionResult?.result ? `مشاهده خلاصه ماموریت ${round}` : `ماموریت ${round}: ${rule.players} نفر`}
+                      type="button"
                       style={missionPathPositions[index]}
                     >
-                      <span className="absolute left-1/2 top-0 flex h-3 min-w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-warning/70 bg-base-100 px-0.5 text-[0.45rem] font-bold leading-none text-warning">
+                      {missionResult?.result ? (
+                        <span className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-[85%] whitespace-nowrap rounded-full border border-primary/40 bg-primary px-1.5 py-0.5 text-[0.42rem] font-black leading-none text-primary-content shadow">
+                          جزئیات
+                        </span>
+                      ) : null}
+                      <span
+                        className={`absolute left-1/2 flex h-3 min-w-3 -translate-x-1/2 items-center justify-center rounded-full border border-warning/70 bg-base-100 px-0.5 text-[0.45rem] font-bold leading-none text-warning ${
+                          missionResult?.result
+                            ? "bottom-0 translate-y-1/2"
+                            : "top-0 -translate-y-1/2"
+                        }`}
+                      >
                         {round}
                       </span>
                       {!missionResult?.result ? (
@@ -847,7 +877,7 @@ export function AvalonTableCard({
                           {failMarks}
                         </span>
                       ) : null}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -1335,15 +1365,23 @@ export function AvalonTableCard({
                         : "";
 
                       return (
-                        <div
-                          className={`flex aspect-[4/5] min-h-12 flex-col items-center justify-between rounded-md border px-1 py-1.5 text-center shadow-sm ${resultClasses} ${decidingClasses}`}
+                        <button
+                          aria-haspopup={missionResult?.result ? "dialog" : undefined}
+                          className={`relative flex aspect-[4/5] min-h-12 flex-col items-center justify-between rounded-md border px-1 py-1.5 text-center shadow-sm ${resultClasses} ${decidingClasses} ${missionResult?.result ? "cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" : "cursor-default"}`}
+                          disabled={!missionResult?.result}
                           key={index}
+                          onClick={() => missionResult?.result && setSelectedMissionSummary(missionResult)}
                           title={
                             missionResult?.result
                               ? `Mission ${round}: ${missionResult.result}. Success: ${missionResult.successCount}, fail: ${missionResult.failCount}.`
                               : `Mission ${round}: ${missionResult?.voteCount ?? 0}/${missionResult?.teamMemberCount ?? rule.players} votes.`
                           }
                         >
+                          {missionResult?.result ? (
+                            <span className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-primary/40 bg-primary px-1 py-0.5 text-[0.42rem] font-black leading-none text-primary-content shadow">
+                              جزئیات
+                            </span>
+                          ) : null}
                           <span className="text-[0.55rem] font-semibold leading-none text-base-content/50">
                             {round}
                           </span>
@@ -1369,7 +1407,7 @@ export function AvalonTableCard({
                                   ? "Failure"
                                   : `${rule.minimumFailures} fail`}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -1522,6 +1560,80 @@ export function AvalonTableCard({
                   هنوز مرحله بانوی دریاچه‌ای انجام نشده است.
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isTableView && selectedMissionSummary ? (
+        <div
+          aria-labelledby="mission-summary-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+          dir="rtl"
+          onClick={() => setSelectedMissionSummary(null)}
+          role="dialog"
+        >
+          <div
+            className={`w-full max-w-sm overflow-hidden rounded-xl border bg-base-100 shadow-2xl ${
+              selectedMissionSummary.result === "succeeded"
+                ? "border-success/40"
+                : "border-error/40"
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 border-b border-base-300 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold" id="mission-summary-title">
+                  خلاصه ماموریت {selectedMissionSummary.round}
+                </h2>
+                <span
+                  className={`badge badge-sm mt-1 ${
+                    selectedMissionSummary.result === "succeeded"
+                      ? "badge-success"
+                      : "badge-error"
+                  }`}
+                >
+                  {selectedMissionSummary.result === "succeeded"
+                    ? "موفق"
+                    : "ناموفق"}
+                </span>
+              </div>
+              <button
+                aria-label="بستن خلاصه ماموریت"
+                className="btn btn-circle btn-ghost btn-sm"
+                onClick={() => setSelectedMissionSummary(null)}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-4">
+              <div className="mb-4 flex items-center justify-between rounded-lg border border-error/25 bg-error/10 px-3 py-2">
+                <span className="text-sm font-bold">تعداد کل رای شکست</span>
+                <span className="badge badge-error badge-lg font-black">
+                  {selectedMissionSummary.failCount}
+                </span>
+              </div>
+              <h3 className="mb-2 text-xs font-black text-base-content/60">
+                اعضای تیم
+              </h3>
+              <ul className="grid gap-2">
+                {selectedMissionSummary.teamMembers.map((member) => (
+                  <li
+                    className="flex items-center justify-between rounded-lg border border-base-300 bg-base-200/60 px-3 py-2"
+                    key={member.seatId}
+                  >
+                    <span className="font-bold">
+                      {member.playerName ?? `صندلی ${member.seatNumber}`}
+                    </span>
+                    <span className="text-xs text-base-content/55">
+                      صندلی {member.seatNumber}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

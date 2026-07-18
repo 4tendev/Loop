@@ -1,11 +1,4 @@
 import {
-  closeSocket,
-  createMessage,
-  parseFrame,
-  send,
-  writeHandshake,
-} from "./websocket-protocol.mjs";
-import {
   avalonTableActionTypes,
 } from "./table-actions.mjs";
 
@@ -16,6 +9,26 @@ const AVALON_VISIBLE_EVIL_MATE_ROLES = new Set([
   "mordred",
 ]);
 
+function createMessage(type, data) {
+  return JSON.stringify({
+    type,
+    data,
+    sentAt: new Date().toISOString(),
+  });
+}
+
+function send(socket, text) {
+  if (socket.readyState === 1) {
+    socket.send(text);
+  }
+}
+
+function closeSocket(socket, code = 1000, reason = "Closing") {
+  if (socket.readyState === 0 || socket.readyState === 1) {
+    socket.close(code, reason);
+  }
+}
+
 export function createAvalonWebSocketGateway({
   actions,
   clients,
@@ -23,10 +36,22 @@ export function createAvalonWebSocketGateway({
   getUserFromRequest,
   wsPath,
 }) {
+  let broadcastQueue = Promise.resolve();
+  let snapshotVersion = 0;
+
   async function broadcastActiveGames({ force = false } = {}) {
+    const broadcast = broadcastQueue.then(() =>
+      loadAndBroadcastActiveGames({ force }),
+    );
+    broadcastQueue = broadcast.catch(() => {});
+    return broadcast;
+  }
+
+  async function loadAndBroadcastActiveGames({ force }) {
+    const targetClients = Array.from(clients);
     const watchedGameIds = Array.from(
       new Set(
-        Array.from(clients)
+        targetClients
           .map((client) => client.gameId)
           .filter(Boolean),
       ),
@@ -34,8 +59,13 @@ export function createAvalonWebSocketGateway({
     const games = await getActiveAvalonGames({
       includeGameIds: watchedGameIds,
     });
+    snapshotVersion += 1;
 
-    for (const client of clients) {
+    for (const client of targetClients) {
+      if (!clients.has(client)) {
+        continue;
+      }
+
       const clientGames = client.gameId
         ? games.filter((game) => game.id === client.gameId)
         : games.filter(
@@ -44,7 +74,10 @@ export function createAvalonWebSocketGateway({
           );
 
       if (client.gameId) {
-        sendTableSnapshot(client, clientGames[0] ?? null, { force });
+        sendTableSnapshot(client, clientGames[0] ?? null, {
+          force,
+          snapshotVersion,
+        });
         continue;
       }
 
@@ -58,19 +91,41 @@ export function createAvalonWebSocketGateway({
       }
 
       client.latestGamesJson = gamesJson;
-      send(client, createMessage("avalon.games", publicClientGames));
+      send(
+        client,
+        createMessage("avalon.games", {
+          games: publicClientGames,
+          snapshotVersion,
+        }),
+      );
     }
   }
 
   async function acceptWebSocket(request, socket, requestUrl) {
-    if (!writeHandshake(request, socket)) {
-      return;
-    }
+    const pendingMessages = [];
+    const queuePendingMessage = (data, isBinary) => {
+      pendingMessages.push({ data, isBinary });
+    };
+    socket.on("message", queuePendingMessage);
+    socket.on("close", () => {
+      handleClientDisconnect(socket);
+    });
+    socket.on("error", () => {
+      handleClientDisconnect(socket);
+    });
+    socket.isAlive = true;
+    socket.on("pong", () => {
+      socket.isAlive = true;
+    });
 
     const user = await getUserFromRequest(request).catch((error) => {
       console.error("Failed to read websocket user session", error);
       return null;
     });
+
+    if (socket.readyState !== 1) {
+      return;
+    }
 
     socket.user = user;
     socket.gameId = requestUrl.searchParams.get("gameId") || null;
@@ -97,36 +152,18 @@ export function createAvalonWebSocketGateway({
       send(socket, createMessage("error", { message: "Failed to load games" }));
     });
 
-    socket.on("data", (buffer) => {
-      const frame = parseFrame(buffer);
-
-      if (!frame) {
-        return;
+    const handleMessage = (data, isBinary) => {
+      if (!isBinary) {
+        handleClientMessage(socket, data.toString());
       }
+    };
+    socket.off("message", queuePendingMessage);
+    socket.on("message", handleMessage);
 
-      if (frame.opcode === 0x8) {
-        closeSocket(socket);
-        return;
-      }
+    for (const message of pendingMessages) {
+      handleMessage(message.data, message.isBinary);
+    }
 
-      if (frame.opcode === 0x9) {
-        socket.write(Buffer.from([0x8a, 0x00]));
-        return;
-      }
-
-      if (frame.opcode !== 0x1) {
-        return;
-      }
-
-      handleClientMessage(socket, frame.text);
-    });
-
-    socket.on("close", () => {
-      handleClientDisconnect(socket);
-    });
-    socket.on("error", () => {
-      handleClientDisconnect(socket);
-    });
   }
 
   function handleClientDisconnect(socket) {
@@ -139,7 +176,11 @@ export function createAvalonWebSocketGateway({
     });
   }
 
-  function sendTableSnapshot(socket, game, { force = false } = {}) {
+  function sendTableSnapshot(
+    socket,
+    game,
+    { force = false, snapshotVersion },
+  ) {
     const snapshot = createTableSnapshot(game, socket.user);
     const tableJson = JSON.stringify(snapshot);
 
@@ -148,7 +189,10 @@ export function createAvalonWebSocketGateway({
     }
 
     socket.latestTableJson = tableJson;
-    send(socket, createMessage("avalon.table", snapshot));
+    send(
+      socket,
+      createMessage("avalon.table", { ...snapshot, snapshotVersion }),
+    );
   }
 
   function createTableSnapshot(game, user) {

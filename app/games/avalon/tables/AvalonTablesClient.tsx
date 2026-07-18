@@ -116,7 +116,9 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               </div>
             ) : null}
 
-            {connectionStatus === "connecting" && displayedGames.length === 0 ? (
+            {(connectionStatus === "connecting" ||
+              connectionStatus === "syncing") &&
+            displayedGames.length === 0 ? (
               <div
                 className={
                   isTableView
@@ -128,7 +130,9 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               </div>
             ) : null}
 
-            {connectionStatus !== "connecting" && displayedGames.length === 0 ? (
+            {connectionStatus !== "connecting" &&
+            connectionStatus !== "syncing" &&
+            displayedGames.length === 0 ? (
               <div
                 className={
                   isTableView

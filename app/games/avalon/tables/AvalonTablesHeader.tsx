@@ -36,7 +36,8 @@ export function AvalonTablesHeader({
             className={`badge ${
               connectionStatus === "connected"
                 ? "badge-success"
-                : connectionStatus === "connecting"
+                : connectionStatus === "connecting" ||
+                    connectionStatus === "syncing"
                   ? "badge-warning"
                   : "badge-error"
             }`}

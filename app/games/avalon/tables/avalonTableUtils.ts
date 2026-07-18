@@ -17,6 +17,7 @@ export const statusClasses: Record<AvalonGameStatus, string> = {
 };
 
 export const connectionLabels: Record<ConnectionStatus, string> = {
+  syncing: "در حال همگام‌سازی",
   connecting: "در حال اتصال",
   connected: "زنده",
   disconnected: "قطع شده",

@@ -149,6 +149,25 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
                 ELSE json_build_object(
                   'missionRound', mission_summary."missionRound",
                   'teamMemberCount', mission_summary."teamMemberCount",
+                  'teamMembers', COALESCE(
+                    (
+                      SELECT json_agg(
+                        json_build_object(
+                          'seatId', team_member_seat.id,
+                          'seatNumber', team_member_seat.number,
+                          'playerName', team_member_player.name
+                        )
+                        ORDER BY team_member_seat.number
+                      )
+                      FROM avalon_quest_team_members team_member
+                      INNER JOIN avalon_seats team_member_seat
+                        ON team_member_seat.id = team_member.seat_id
+                      LEFT JOIN users team_member_player
+                        ON team_member_player.id = team_member_seat.player_id
+                      WHERE mission.quest_id = team_member.quest_id
+                    ),
+                    '[]'::json
+                  ),
                   'voteCount', mission_summary."voteCount",
                   'successCount', mission_summary."successCount",
                   'failCount', mission_summary."failCount",

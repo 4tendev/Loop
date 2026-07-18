@@ -114,6 +114,7 @@ export function useAvalonTables(tableId?: string) {
     const url = getAvalonWsUrl(tableId);
     let shouldReconnect = true;
     let reconnectAttempts = 0;
+    let latestSnapshotVersion = 0;
 
     function clearReconnectTimeout() {
       if (reconnectTimeoutRef.current) {
@@ -272,9 +273,12 @@ export function useAvalonTables(tableId?: string) {
     }
 
     function connect() {
+      const previousSocket = socketRef.current;
       const socket = new WebSocket(url);
 
       socketRef.current = socket;
+      previousSocket?.close();
+      latestSnapshotVersion = 0;
       setWsUrl(url);
       setConnectionStatus("connecting");
       setCanCancelFromWs(false);
@@ -288,14 +292,23 @@ export function useAvalonTables(tableId?: string) {
       setCanAssassinActionFromWs(false);
 
       socket.addEventListener("open", () => {
+        if (socketRef.current !== socket) {
+          socket.close();
+          return;
+        }
+
         clearReconnectTimeout();
         reconnectAttempts = 0;
-        setConnectionStatus("connected");
+        setConnectionStatus("syncing");
         setError(null);
         socket.send(JSON.stringify({ type: "refresh" }));
       });
 
       socket.addEventListener("message", (event) => {
+        if (socketRef.current !== socket) {
+          return;
+        }
+
         try {
           const message = JSON.parse(event.data) as AvalonWsMessage;
 
@@ -342,14 +355,26 @@ export function useAvalonTables(tableId?: string) {
           }
 
           if (message.type === "avalon.games") {
-            setGames(message.data);
+            if (message.data.snapshotVersion < latestSnapshotVersion) {
+              return;
+            }
+
+            latestSnapshotVersion = message.data.snapshotVersion;
+            setGames(message.data.games);
             setLastUpdatedAt(message.sentAt);
+            setConnectionStatus("connected");
             return;
           }
 
           if (message.type === "avalon.table") {
+            if (message.data.snapshotVersion < latestSnapshotVersion) {
+              return;
+            }
+
+            latestSnapshotVersion = message.data.snapshotVersion;
             setTableSnapshot(message.data);
             setLastUpdatedAt(message.sentAt);
+            setConnectionStatus("connected");
             return;
           }
 
@@ -365,15 +390,20 @@ export function useAvalonTables(tableId?: string) {
       });
 
       socket.addEventListener("close", () => {
-        if (socketRef.current === socket) {
-          socketRef.current = null;
+        if (socketRef.current !== socket) {
+          return;
         }
 
+        socketRef.current = null;
         setConnectionStatus("disconnected");
         scheduleReconnect();
       });
 
       socket.addEventListener("error", () => {
+        if (socketRef.current !== socket) {
+          return;
+        }
+
         setConnectionStatus("error");
         setError("اتصال به سرور وب‌سوکت آوالون انجام نشد.");
         scheduleReconnect();

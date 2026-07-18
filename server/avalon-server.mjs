@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { WebSocketServer } from "ws";
 
 import {
   cancelAvalonGame,
@@ -20,7 +21,12 @@ import { getUserFromRequest } from "./avalon/session.mjs";
 import { createAvalonWebSocketGateway } from "./avalon/websocket-gateway.mjs";
 
 const { broadcastIntervalMs, host, port, wsPath } = getServerConfig();
+const heartbeatIntervalMs = 30000;
 const clients = new Set();
+const webSocketServer = new WebSocketServer({
+  noServer: true,
+  maxPayload: 1024 * 1024,
+});
 
 const gateway = createAvalonWebSocketGateway({
   actions: {
@@ -59,7 +65,7 @@ const server = createServer((request, response) => {
   response.end(JSON.stringify({ ok: false, message: "Not found" }));
 });
 
-server.on("upgrade", (request, socket) => {
+server.on("upgrade", (request, socket, head) => {
   const requestUrl = new URL(request.url ?? "/", `http://${request.headers.host}`);
 
   if (requestUrl.pathname !== wsPath) {
@@ -68,9 +74,11 @@ server.on("upgrade", (request, socket) => {
     return;
   }
 
-  gateway.acceptWebSocket(request, socket, requestUrl).catch((error) => {
-    console.error("Failed to accept websocket connection", error);
-    socket.destroy();
+  webSocketServer.handleUpgrade(request, socket, head, (webSocket) => {
+    gateway.acceptWebSocket(request, webSocket, requestUrl).catch((error) => {
+      console.error("Failed to accept websocket connection", error);
+      webSocket.terminate();
+    });
   });
 });
 
@@ -84,8 +92,21 @@ const interval = setInterval(() => {
   });
 }, broadcastIntervalMs);
 
+const heartbeatInterval = setInterval(() => {
+  for (const client of clients) {
+    if (client.isAlive === false) {
+      client.terminate();
+      continue;
+    }
+
+    client.isAlive = false;
+    client.ping();
+  }
+}, heartbeatIntervalMs);
+
 function shutdown() {
   clearInterval(interval);
+  clearInterval(heartbeatInterval);
 
   for (const client of clients) {
     gateway.closeSocket(client, 1001, "Server shutting down");

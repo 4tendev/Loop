@@ -88,6 +88,11 @@ export type AvalonWsPhase = {
   mission: {
     missionRound: number;
     teamMemberCount: number;
+    teamMembers: {
+      seatId: string;
+      seatNumber: number;
+      playerName: string | null;
+    }[];
     voteCount: number;
     successCount: number;
     failCount: number;
@@ -110,6 +115,7 @@ export type AvalonWsUser = {
 };
 
 export type AvalonTableSnapshot = {
+  snapshotVersion: number;
   gameId: string | null;
   tableInfo: AvalonWsGame | null;
   privateMessage: string | null;
@@ -128,7 +134,10 @@ export type AvalonWsMessage =
     }
   | {
       type: "avalon.games";
-      data: AvalonWsGame[];
+      data: {
+        games: AvalonWsGame[];
+        snapshotVersion: number;
+      };
       sentAt: string;
     }
   | {
@@ -165,6 +174,7 @@ export type AvalonWsMessage =
 
 export type ConnectionStatus =
   | "connecting"
+  | "syncing"
   | "connected"
   | "disconnected"
   | "error";
