@@ -22,6 +22,7 @@ export type AvalonWsSeat = {
 
 export type AvalonWsGame = {
   id: string;
+  name: string;
   status: AvalonGameStatus;
   winnerSide: AvalonSide | null;
   config: AvalonGameConfig;

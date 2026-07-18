@@ -66,6 +66,11 @@ export default function Profile({ user }: { user: ApiUser }) {
             </Link>
           </li>
           <li>
+            <Link href="/user/tables" onClick={closeDrawer}>
+              تاریخچه میزهای آوالون
+            </Link>
+          </li>
+          <li>
             <button
               className="text-error"
               disabled={isLoggingOut}

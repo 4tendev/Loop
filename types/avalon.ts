@@ -128,6 +128,7 @@ export const playerCounts = Object.keys(
 
 export type AvalonGame = {
   id: string;
+  name: string;
   creator: User;
   status: AvalonGameStatus;
   config: AvalonGameConfig;
@@ -173,5 +174,6 @@ export type Phase = {
 
 export type CreateAvalonGameInput = {
   user: User;
+  name?: string;
   config: AvalonGameConfig;
 };

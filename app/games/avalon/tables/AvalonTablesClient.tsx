@@ -16,6 +16,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
   const {
     games,
     tableSnapshot,
+    isTableSnapshotLoaded,
     wsUser,
     connectionStatus,
     error,
@@ -41,10 +42,14 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
   const tableActionRequired = isTerminalTableGame
     ? null
     : (tableSnapshot?.actionRequired ?? null);
-  const displayedGames =
-    isTableView && tableSnapshot?.tableInfo
+  const displayedGames = isTableView
+    ? isTableSnapshotLoaded && tableSnapshot?.tableInfo
       ? [tableSnapshot.tableInfo]
-      : games;
+      : []
+    : games;
+  const isLoading = isTableView
+    ? !isTableSnapshotLoaded
+    : connectionStatus === "connecting" || connectionStatus === "syncing";
   const hasActiveCreatedGame =
     currentUserId !== null &&
     games.some(
@@ -116,9 +121,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               </div>
             ) : null}
 
-            {(connectionStatus === "connecting" ||
-              connectionStatus === "syncing") &&
-            displayedGames.length === 0 ? (
+            {isLoading && displayedGames.length === 0 ? (
               <div
                 className={
                   isTableView
@@ -130,9 +133,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               </div>
             ) : null}
 
-            {connectionStatus !== "connecting" &&
-            connectionStatus !== "syncing" &&
-            displayedGames.length === 0 ? (
+            {!isLoading && displayedGames.length === 0 ? (
               <div
                 className={
                   isTableView

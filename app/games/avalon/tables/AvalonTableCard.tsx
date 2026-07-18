@@ -755,10 +755,13 @@ export function AvalonTableCard({
               <span className="rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-black text-warning">
                 {game.occupiedSeatCount}/{game.config.playerCount}
               </span>
-              <span className="truncate text-xs text-base-content/70">
-                {latestPhase
-                  ? phaseLabels[latestPhase.type]
-                  : statusLabels[game.status]}
+              <span className="min-w-0">
+                <strong className="block truncate text-xs">{game.name}</strong>
+                <span className="block truncate text-[0.65rem] text-base-content/60">
+                  {latestPhase
+                    ? phaseLabels[latestPhase.type]
+                    : statusLabels[game.status]}
+                </span>
               </span>
               <img
                 alt="Oberon"
@@ -1043,7 +1046,7 @@ export function AvalonTableCard({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-semibold">بازی {game.id.slice(0, 8)}</h2>
+                <h2 className="font-semibold">{game.name}</h2>
                 <span
                   className={`badge badge-outline ${statusClasses[game.status]}`}
                 >

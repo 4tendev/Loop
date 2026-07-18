@@ -1,6 +1,7 @@
 import Link from "next/link";
 import User from "./profile/User";
 import ThemeChanger from "./ThemeChanger";
+import ActiveAvalonTableLink from "./ActiveAvalonTable";
 
 export default function Navbar() {
   return (
@@ -13,6 +14,7 @@ export default function Navbar() {
         <Link href="/games/avalon" className="btn h-full btn-ghost btn-sm">
           Avalon
         </Link>
+        <ActiveAvalonTableLink />
       </div>
 
       <div className="flex items-center h-8 gap-2 justify-center items-cent">

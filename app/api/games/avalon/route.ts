@@ -20,11 +20,13 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type CreateAvalonGameRequestBody = {
+  name?: unknown;
   config?: unknown;
 };
 
 type AvalonGameRow = {
   id: string;
+  name: string;
   status: AvalonGameStatus;
   playerCount: AvalonGameConfig["playerCount"];
   useOberon: boolean;
@@ -136,6 +138,7 @@ function createRoles(config: AvalonGameConfig): AvalonRoleName[] {
 function mapGame(row: AvalonGameRow, seats: AvalonSeat[]): Omit<AvalonGame, "creator"> {
   return {
     id: row.id,
+    name: row.name,
     status: row.status,
     config: {
       playerCount: row.playerCount,
@@ -164,6 +167,10 @@ function assertSingleRow<T extends QueryResultRow>(row: T | undefined) {
 async function ensureAvalonMessageColumns(
   queryable: Pick<ReturnType<typeof getPostgresPool>, "query">,
 ) {
+  await queryable.query(`
+    ALTER TABLE avalon_games
+    ADD COLUMN IF NOT EXISTS table_name text
+  `);
   await queryable.query(`
     ALTER TABLE avalon_games
     ADD COLUMN IF NOT EXISTS public_message text NOT NULL DEFAULT 'بازی در مرحله لابی است.'
@@ -203,6 +210,16 @@ export async function POST(request: NextRequest) {
     return badRequest(config);
   }
 
+  if (body.name !== undefined && typeof body.name !== "string") {
+    return badRequest("نام میز نامعتبر است");
+  }
+
+  const tableName = typeof body.name === "string" ? body.name.trim() : "";
+
+  if (tableName.length > 60) {
+    return badRequest("نام میز نمی‌تواند بیشتر از ۶۰ نویسه باشد");
+  }
+
   const roles = createRoles(config);
   const pool = getPostgresPool();
   const client = await pool.connect();
@@ -237,15 +254,17 @@ export async function POST(request: NextRequest) {
       `
         INSERT INTO avalon_games (
           creator_id,
+          table_name,
           player_count,
           use_oberon,
           use_lady_of_the_lake,
           role_exposing,
           public_message
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING
           id,
+          COALESCE(table_name, 'میز بدون نام') AS name,
           status,
           player_count AS "playerCount",
           use_oberon AS "useOberon",
@@ -259,6 +278,7 @@ export async function POST(request: NextRequest) {
       `,
       [
         session.user.id,
+        tableName || null,
         config.playerCount,
         config.useOberon,
         config.useLadyOfTheLake,

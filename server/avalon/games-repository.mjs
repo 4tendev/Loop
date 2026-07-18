@@ -7,6 +7,7 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
     `
     SELECT
       game.id,
+      COALESCE(game.table_name, 'میز بدون نام') AS name,
       game.status,
       game.winner_side AS "winnerSide",
       game.player_count AS "playerCount",
@@ -306,6 +307,7 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
 
   return result.rows.map((row) => ({
     id: row.id,
+    name: row.name,
     status: row.status,
     winnerSide: row.winnerSide,
     config: {
@@ -330,6 +332,10 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
 }
 
 async function ensureAvalonMessageColumns() {
+  await pool.query(`
+    ALTER TABLE avalon_games
+    ADD COLUMN IF NOT EXISTS table_name text
+  `);
   await pool.query(`
     ALTER TABLE avalon_games
     ADD COLUMN IF NOT EXISTS public_message text NOT NULL DEFAULT 'بازی در مرحله لابی است.'

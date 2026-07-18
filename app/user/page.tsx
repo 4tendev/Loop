@@ -311,6 +311,19 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <Link
+              className="flex items-center justify-between gap-4 rounded-box border border-primary/25 bg-primary/5 p-4 transition hover:border-primary/50 hover:bg-primary/10"
+              href="/user/tables"
+            >
+              <div>
+                <h2 className="font-semibold">تاریخچه میزهای آوالون</h2>
+                <p className="text-sm text-base-content/60">
+                  نتیجه و خلاصه بازی‌های تمام‌شده یا لغوشده را ببینید.
+                </p>
+              </div>
+              <span className="btn btn-primary btn-sm shrink-0">مشاهده</span>
+            </Link>
+
             <form className="flex flex-col gap-5" onSubmit={updateName}>
               <label className="flex w-full flex-col gap-2">
                 <span className="label-text">نام</span>

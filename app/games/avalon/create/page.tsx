@@ -49,6 +49,7 @@ function getRolePreview(config: AvalonCreateConfig) {
 
 export default function CreateAvalonPage() {
   const router = useRouter();
+  const [tableName, setTableName] = useState("");
   const [config, setConfig] = useState<AvalonCreateConfig>({
     playerCount: playerCounts[0],
     useOberon: false,
@@ -91,7 +92,7 @@ export default function CreateAvalonPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ config }),
+        body: JSON.stringify({ name: tableName, config }),
       });
       const result = (await response.json()) as CreateAvalonGameResponse;
 
@@ -131,6 +132,25 @@ export default function CreateAvalonPage() {
             </div>
 
             <div className="border-t border-base-300 p-5">
+              <label className="mb-5 block">
+                <span className="mb-2 block text-sm font-medium">نام میز</span>
+                <input
+                  className="input input-bordered w-full"
+                  disabled={isCreating}
+                  maxLength={60}
+                  onChange={(event) => {
+                    setTableName(event.target.value);
+                    setError(null);
+                  }}
+                  placeholder="مثلاً شوالیه‌های شب"
+                  type="text"
+                  value={tableName}
+                />
+                <span className="mt-1 block text-xs text-base-content/50">
+                  اگر خالی بماند، «میز بدون نام» نمایش داده می‌شود.
+                </span>
+              </label>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">بازیکن‌ها</h2>
@@ -266,6 +286,12 @@ export default function CreateAvalonPage() {
           <section className="rounded-lg border border-base-300 bg-base-100 p-5 shadow-sm">
             <h2 className="text-lg font-semibold">تنظیمات انتخاب‌شده</h2>
             <dl className="mt-4 grid gap-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-base-content/60">نام میز</dt>
+                <dd className="max-w-44 truncate font-medium">
+                  {tableName.trim() || "میز بدون نام"}
+                </dd>
+              </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-base-content/60">بازیکن‌ها</dt>
                 <dd className="font-medium">{config.playerCount}</dd>

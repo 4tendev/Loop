@@ -22,6 +22,7 @@ export function useAvalonTables(tableId?: string) {
   const [games, setGames] = useState<AvalonWsGame[]>([]);
   const [tableSnapshot, setTableSnapshot] =
     useState<AvalonTableSnapshot | null>(null);
+  const [tableSnapshotId, setTableSnapshotId] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
@@ -373,6 +374,7 @@ export function useAvalonTables(tableId?: string) {
 
             latestSnapshotVersion = message.data.snapshotVersion;
             setTableSnapshot(message.data);
+            setTableSnapshotId(tableId ?? null);
             setLastUpdatedAt(message.sentAt);
             setConnectionStatus("connected");
             return;
@@ -940,6 +942,7 @@ export function useAvalonTables(tableId?: string) {
   return {
     games,
     tableSnapshot,
+    isTableSnapshotLoaded: Boolean(tableId && tableSnapshotId === tableId),
     wsUser,
     connectionStatus,
     lastUpdatedAt,
