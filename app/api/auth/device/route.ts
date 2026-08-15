@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 type DeviceLoginRequestBody = {
   deviceId?: unknown;
-  deviceName?: unknown;
+  name?: unknown;
   link?: unknown;
 };
 
@@ -28,8 +28,12 @@ export async function POST(request: NextRequest) {
     return badRequest("شناسه دستگاه الزامی است");
   }
 
-  if (body.deviceName !== undefined && typeof body.deviceName !== "string") {
-    return badRequest("نام دستگاه باید متن باشد");
+  if (body.name !== undefined && typeof body.name !== "string") {
+    return badRequest("نام کاربر باید متن باشد");
+  }
+
+  if (typeof body.name === "string" && body.name.trim().length > 80) {
+    return badRequest("نام کاربر نباید بیشتر از ۸۰ نویسه باشد");
   }
 
   try {
@@ -39,7 +43,7 @@ export async function POST(request: NextRequest) {
       await linkAuthMethod(getPostgresPool(), currentSession.user.id, deviceAuthProvider, createDeviceProviderUserId(body.deviceId));
       return apiResponse(200, "دستگاه به حساب اضافه شد", currentSession.user);
     }
-    const user = await getOrCreateDeviceUser(body.deviceId, body.deviceName);
+    const user = await getOrCreateDeviceUser(body.deviceId, body.name);
     const session = await createUserSession(user);
     const response = apiResponse(
       200,
@@ -54,6 +58,9 @@ export async function POST(request: NextRequest) {
     if (error instanceof AuthMethodAlreadyLinkedError) return badRequest("این دستگاه به حساب دیگری متصل است");
     if (error instanceof Error && error.message === "Invalid device id") {
       return badRequest("شناسه دستگاه نامعتبر است");
+    }
+    if (error instanceof Error && error.message === "Invalid device user name") {
+      return badRequest("نام کاربر نامعتبر است");
     }
 
     console.error("Failed to authenticate device", error);

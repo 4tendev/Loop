@@ -40,16 +40,6 @@ export function createDeviceProviderUserId(deviceId: string) {
   return providerUserId;
 }
 
-function getDeviceDisplayName(deviceName: string | undefined, deviceId: string) {
-  const trimmedName = deviceName?.trim();
-
-  if (trimmedName) {
-    return trimmedName.slice(0, 80);
-  }
-
-  return `Device ${deviceId.slice(0, 8)}`;
-}
-
 async function getUserByDeviceProviderUserId(
   client: UserQueryClient,
   providerUserId: string,
@@ -77,7 +67,7 @@ async function getUserByDeviceProviderUserId(
 
 export async function getOrCreateDeviceUser(
   deviceId: string,
-  deviceName?: string,
+  name?: string,
 ): Promise<User> {
   const providerUserId = createDeviceProviderUserId(deviceId);
   const pool = getPostgresPool();
@@ -102,6 +92,12 @@ export async function getOrCreateDeviceUser(
       return existingUserInTransaction;
     }
 
+    const trimmedName = name?.trim() ?? "";
+
+    if (!trimmedName || trimmedName.length > 80) {
+      throw new Error("Invalid device user name");
+    }
+
     const userResult = await client.query<UserRow>(
       `
         INSERT INTO users (name, profile_image)
@@ -114,7 +110,7 @@ export async function getOrCreateDeviceUser(
           created_at AS "createdAt",
           updated_at AS "updatedAt"
       `,
-      [getDeviceDisplayName(deviceName, providerUserId), "/avatar.png"],
+      [trimmedName, "/avatar.png"],
     );
     const user = userResult.rows[0];
 

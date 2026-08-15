@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@/app/providers/UserProvider";
 import type { ApiUser } from "@/types/user";
 
-const deviceStorageKey = "loop.auth.deviceId";
+const deviceStorageKey = "loop.auth.deviceCredential.v2";
 
 type DeviceLoginResponse = {
   code: number;
@@ -13,44 +13,32 @@ type DeviceLoginResponse = {
   data: ApiUser | null;
 };
 
-function getDeviceName() {
-  const platform = navigator.platform;
-
-  return platform ? `دستگاه ${platform}` : "این دستگاه";
-}
-
-function getOrCreateDeviceId() {
-  const savedDeviceId = window.localStorage.getItem(deviceStorageKey);
-
-  if (savedDeviceId) {
-    return savedDeviceId;
-  }
-
-  const deviceId = window.crypto.randomUUID();
-  window.localStorage.setItem(deviceStorageKey, deviceId);
-
-  return deviceId;
-}
-
 export default function DeviceAuth({ linking = false }: { linking?: boolean }) {
   const router = useRouter();
   const { setUser } = useUser();
-  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>();
+  const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const shortDeviceId = useMemo(
-    () => (deviceId ? deviceId.slice(0, 8).toUpperCase() : ""),
-    [deviceId],
-  );
+  const isNewDevice = deviceId === null;
 
   useEffect(() => {
-    setDeviceId(getOrCreateDeviceId());
+    setDeviceId(window.localStorage.getItem(deviceStorageKey));
   }, []);
 
   async function authenticateWithDevice() {
-    if (!deviceId) {
+    if (deviceId === undefined) {
       return;
     }
+
+    const trimmedName = name.trim();
+
+    if (isNewDevice && !linking && !trimmedName) {
+      setError("نام خود را وارد کنید.");
+      return;
+    }
+
+    const authenticationDeviceId = deviceId ?? window.crypto.randomUUID();
 
     setError(null);
     setIsSubmitting(true);
@@ -63,8 +51,8 @@ export default function DeviceAuth({ linking = false }: { linking?: boolean }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          deviceId,
-          deviceName: getDeviceName(),
+          deviceId: authenticationDeviceId,
+          name: isNewDevice && !linking ? trimmedName : undefined,
           link: linking,
         }),
       });
@@ -73,6 +61,11 @@ export default function DeviceAuth({ linking = false }: { linking?: boolean }) {
       if (!response.ok || !result.data) {
         setError(result.message || "ورود با دستگاه انجام نشد.");
         return;
+      }
+
+      if (isNewDevice) {
+        window.localStorage.setItem(deviceStorageKey, authenticationDeviceId);
+        setDeviceId(authenticationDeviceId);
       }
 
       setUser(result.data);
@@ -90,20 +83,37 @@ export default function DeviceAuth({ linking = false }: { linking?: boolean }) {
       <div className="space-y-2">
         <h2 className="text-xl font-semibold">ورود با دستگاه</h2>
         <p className="text-sm text-base-content/70">
-          از این مرورگر به عنوان دستگاه ذخیره‌شده برای ورود سریع استفاده کنید.
+          {linking
+            ? "این مرورگر را برای ورود سریع به حساب فعلی متصل کنید."
+            : isNewDevice
+              ? "نام خود را وارد کنید و از این مرورگر برای ورود سریع استفاده کنید."
+              : "با دستگاه ذخیره‌شده وارد حساب خود شوید."}
         </p>
       </div>
 
-      {shortDeviceId ? (
-        <div className="rounded-box border border-base-300 bg-base-200/60 p-4 text-sm">
-          <span className="text-base-content/70">کد دستگاه </span>
-          <bdi className="font-mono font-semibold">{shortDeviceId}</bdi>
-        </div>
+      {isNewDevice && !linking ? (
+        <label className="form-control w-full">
+          <span className="label-text mb-2">نام شما</span>
+          <input
+            autoComplete="name"
+            className="input input-bordered w-full"
+            maxLength={80}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="نام خود را وارد کنید"
+            required
+            type="text"
+            value={name}
+          />
+        </label>
       ) : null}
 
       <button
         className="btn btn-primary w-full"
-        disabled={isSubmitting || !deviceId}
+        disabled={
+          isSubmitting ||
+          deviceId === undefined ||
+          (isNewDevice && !linking && !name.trim())
+        }
         onClick={authenticateWithDevice}
         type="button"
       >
