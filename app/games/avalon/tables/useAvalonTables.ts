@@ -576,14 +576,14 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
 
   function requestRematch(gameId: string) {
     if (!canRematchFromWs) {
-      setError("The rematch action is not available. Restart the Avalon server.");
+      setError("امکان بازی مجدد در دسترس نیست. سرور آوالون را دوباره راه‌اندازی کنید.");
       return;
     }
 
     setPendingRematchGameId(gameId);
     rematchTimeoutRef.current = setTimeout(() => {
       setPendingRematchGameId(null);
-      setError("The rematch request timed out.");
+      setError("زمان درخواست بازی مجدد به پایان رسید.");
     }, ACTION_TIMEOUT_MS);
 
     if (

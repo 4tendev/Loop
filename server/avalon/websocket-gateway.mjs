@@ -422,7 +422,7 @@ export function createAvalonWebSocketGateway({
         runAction(socket, {
           action: () =>
             actions.requestAvalonRematch(message.data?.gameId, socket.user?.id),
-          errorMessage: "Rematch request was not saved",
+          errorMessage: "درخواست بازی مجدد ذخیره نشد",
           logMessage: "Failed to request Avalon rematch",
           resultType: "avalon.rematch.result",
         });

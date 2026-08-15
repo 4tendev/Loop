@@ -2433,11 +2433,11 @@ export async function startAvalonGame(gameId, userId) {
 
 export async function requestAvalonRematch(gameId, userId) {
   if (typeof gameId !== "string" || gameId.length === 0) {
-    return { ok: false, message: "Invalid game ID" };
+    return { ok: false, message: "شناسه بازی نامعتبر است" };
   }
 
   if (!userId) {
-    return { ok: false, message: "You must sign in to request a rematch" };
+    return { ok: false, message: "برای درخواست بازی مجدد باید وارد حساب شوید" };
   }
 
   const client = await pool.connect();
@@ -2473,14 +2473,14 @@ export async function requestAvalonRematch(gameId, userId) {
 
     if (!game || game.status !== "completed" || !game.endedAt) {
       await client.query("ROLLBACK");
-      return { ok: false, message: "Only a completed game can be rematched" };
+      return { ok: false, message: "فقط بازی تمام‌شده را می‌توان دوباره برگزار کرد" };
     }
 
     if (game.rematchGameId) {
       await client.query("COMMIT");
       return {
         ok: true,
-        message: "The rematch has already started",
+        message: "بازی مجدد قبلاً شروع شده است",
         gameId,
         rematchGameId: game.rematchGameId,
       };
@@ -2489,7 +2489,7 @@ export async function requestAvalonRematch(gameId, userId) {
     const deadline = new Date(game.endedAt).getTime() + 60 * 60 * 1000;
     if (Date.now() > deadline) {
       await client.query("ROLLBACK");
-      return { ok: false, message: "The one-hour rematch window has expired" };
+      return { ok: false, message: "مهلت یک‌ساعته بازی مجدد به پایان رسیده است" };
     }
 
     const seatsResult = await client.query(
@@ -2505,7 +2505,7 @@ export async function requestAvalonRematch(gameId, userId) {
 
     if (!seats.some((seat) => seat.playerId === userId)) {
       await client.query("ROLLBACK");
-      return { ok: false, message: "Only players from this game can vote for a rematch" };
+      return { ok: false, message: "فقط بازیکنان این بازی می‌توانند به بازی مجدد رأی دهند" };
     }
 
     await client.query(
@@ -2526,7 +2526,7 @@ export async function requestAvalonRematch(gameId, userId) {
       await client.query("COMMIT");
       return {
         ok: true,
-        message: `Rematch accepted (${voteCount}/${seats.length})`,
+        message: `بازی مجدد پذیرفته شد (${voteCount}/${seats.length})`,
         gameId,
       };
     }
@@ -2570,7 +2570,7 @@ export async function requestAvalonRematch(gameId, userId) {
         game.useOberon,
         game.useLadyOfTheLake,
         game.roleExposing,
-        "Game started. Complete your night check.",
+        "بازی شروع شد. بررسی شب خود را کامل کنید.",
         gameId,
         lastKingSeatNumber,
       ],
@@ -2600,7 +2600,7 @@ export async function requestAvalonRematch(gameId, userId) {
 
     return {
       ok: true,
-      message: "Everyone accepted. The rematch has started!",
+      message: "همه بازیکنان پذیرفتند. بازی مجدد شروع شد!",
       gameId,
       rematchGameId,
     };

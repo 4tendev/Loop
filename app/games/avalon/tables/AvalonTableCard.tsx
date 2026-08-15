@@ -535,8 +535,10 @@ export function AvalonTableCard({
           <span className="text-sm leading-none">↻</span>
         )}
         <span>
-          {game.rematch.acceptedByCurrentUser ? "Rematch accepted" : "Rematch"}
-          {` · ${game.rematch.voteCount}/${game.rematch.requiredCount} · ${rematchMinutesRemaining}m`}
+          {game.rematch.acceptedByCurrentUser
+            ? "بازی مجدد پذیرفته شد"
+            : "بازی مجدد"}
+          {` · ${game.rematch.voteCount}/${game.rematch.requiredCount} · ${rematchMinutesRemaining} دقیقه`}
         </span>
       </button>,
     );
