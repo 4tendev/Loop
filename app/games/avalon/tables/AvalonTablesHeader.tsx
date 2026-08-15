@@ -7,12 +7,14 @@ type AvalonTablesHeaderProps = {
   tableId?: string;
   connectionStatus: ConnectionStatus;
   canCreateGame: boolean;
+  adminMode?: boolean;
 };
 
 export function AvalonTablesHeader({
   tableId,
   connectionStatus,
   canCreateGame,
+  adminMode = false,
 }: AvalonTablesHeaderProps) {
   return (
     <div className="border-b border-base-300 p-5">
@@ -22,11 +24,17 @@ export function AvalonTablesHeader({
             Avalon
           </p>
           <h1 className="mt-1 text-2xl font-bold">
-            {tableId ? "میز آوالون" : "بازی‌های فعال آوالون"}
+            {tableId
+              ? "میز آوالون"
+              : adminMode
+                ? "پنل مدیریت میزهای آوالون"
+                : "بازی‌های فعال آوالون"}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/65">
             {tableId
               ? "این صفحه فقط همین میز را از سرور وب‌سوکت دنبال می‌کند."
+              : adminMode
+                ? "همه میزهای فعال، تمام‌شده و لغوشده را ببینید و هر بازی فعال را لغو کنید."
               : "این فهرست برای کاربران ناشناس فقط خواندنی است و از سرور وب‌سوکت به‌روزرسانی می‌شود."}
           </p>
         </div>
@@ -52,7 +60,7 @@ export function AvalonTablesHeader({
               >
                 همه میزها
               </Link>
-            ) : canCreateGame ? (
+            ) : canCreateGame && !adminMode ? (
               <Link
                 className="btn btn-primary btn-sm"
                 href="/games/avalon/create"

@@ -24,8 +24,11 @@ export const connectionLabels: Record<ConnectionStatus, string> = {
   error: "خطا",
 };
 
-export function getAvalonWsUrl(tableId?: string) {
-  const query = tableId ? `?gameId=${encodeURIComponent(tableId)}` : "";
+export function getAvalonWsUrl(tableId?: string, adminMode = false) {
+  const searchParams = new URLSearchParams();
+  if (tableId) searchParams.set("gameId", tableId);
+  if (adminMode) searchParams.set("admin", "1");
+  const query = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
 
   if (process.env.NEXT_PUBLIC_AVALON_WS_URL) {
     return `${process.env.NEXT_PUBLIC_AVALON_WS_URL}${query}`;

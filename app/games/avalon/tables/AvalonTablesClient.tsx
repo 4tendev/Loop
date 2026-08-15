@@ -8,9 +8,13 @@ import { useAvalonTables } from "./useAvalonTables";
 
 type AvalonTablesClientProps = {
   tableId?: string;
+  adminMode?: boolean;
 };
 
-export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps) {
+export default function AvalonTablesClient({
+  tableId,
+  adminMode = false,
+}: AvalonTablesClientProps) {
   const { user, isCheckingUser } = useUser();
   const isTableView = Boolean(tableId);
   const {
@@ -34,7 +38,8 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
     pendingLadyTargetId,
     pendingAssassinActionId,
     actions,
-  } = useAvalonTables(tableId);
+  } = useAvalonTables(tableId, adminMode);
+  const isAdmin = user?.type === "admin";
   const currentUserId = wsUser?.id ?? user?.id ?? null;
   const tableGameStatus = tableSnapshot?.tableInfo?.status ?? null;
   const isTerminalTableGame =
@@ -76,7 +81,11 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
     >
       <div
         className={`mx-auto grid w-full ${
-          isTableView ? "h-full max-w-5xl overflow-hidden" : "max-w-4xl gap-6"
+          isTableView
+            ? "h-full max-w-5xl overflow-hidden"
+            : adminMode
+              ? "max-w-6xl gap-6"
+              : "max-w-4xl gap-6"
         }`}
       >
         <section
@@ -88,6 +97,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
         >
           {!isTableView ? (
             <AvalonTablesHeader
+              adminMode={adminMode}
               canCreateGame={canCreateGame}
               connectionStatus={connectionStatus}
               tableId={tableId}
@@ -143,7 +153,9 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
               >
                 {tableId
                   ? "این میز فعال نیست یا پیدا نشد."
-                  : "فعلا هیچ بازی فعال آوالونی وجود ندارد."}
+                  : adminMode
+                    ? "هنوز هیچ میز آوالونی ساخته نشده است."
+                    : "فعلا هیچ بازی فعال آوالونی وجود ندارد."}
               </div>
             ) : null}
 
@@ -159,6 +171,7 @@ export default function AvalonTablesClient({ tableId }: AvalonTablesClientProps)
                     cancellingGameId={cancellingGameId}
                     connectionStatus={connectionStatus}
                     game={game}
+                    isAdmin={isAdmin}
                     key={game.id}
                     onCancelGame={actions.cancelGame}
                     onChangeSeat={actions.changeSeat}

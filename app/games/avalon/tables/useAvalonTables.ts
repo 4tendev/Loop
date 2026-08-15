@@ -17,7 +17,7 @@ const RECONNECT_INTERVAL_MS = 10000;
 const ACTION_TIMEOUT_MS = 5000;
 const SOCKET_UNAVAILABLE_MESSAGE = "اتصال وب‌سوکت فعال نیست.";
 
-export function useAvalonTables(tableId?: string) {
+export function useAvalonTables(tableId?: string, adminMode = false) {
   const [wsUser, setWsUser] = useState<AvalonWsUser | null>(null);
   const [games, setGames] = useState<AvalonWsGame[]>([]);
   const [tableSnapshot, setTableSnapshot] =
@@ -112,7 +112,7 @@ export function useAvalonTables(tableId?: string) {
   }, [error, notice]);
 
   useEffect(() => {
-    const url = getAvalonWsUrl(tableId);
+    const url = getAvalonWsUrl(tableId, adminMode);
     let shouldReconnect = true;
     let reconnectAttempts = 0;
     let latestSnapshotVersion = 0;
@@ -474,7 +474,7 @@ export function useAvalonTables(tableId?: string) {
       socketRef.current = null;
       socket?.close();
     };
-  }, [tableId]);
+  }, [adminMode, tableId]);
 
   function sendSocketMessage(
     message: Record<string, unknown>,

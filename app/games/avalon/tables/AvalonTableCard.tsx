@@ -16,6 +16,7 @@ type AvalonTableCardProps = {
   tableId?: string;
   userId: string | null;
   wsUserId: string | null;
+  isAdmin?: boolean;
   connectionStatus: ConnectionStatus;
   selectedSeatId: string | null;
   cancellingGameId: string | null;
@@ -78,6 +79,7 @@ export function AvalonTableCard({
   tableId,
   userId,
   wsUserId,
+  isAdmin = false,
   connectionStatus,
   selectedSeatId,
   cancellingGameId,
@@ -167,6 +169,8 @@ export function AvalonTableCard({
   const isFull = game.occupiedSeatCount === game.config.playerCount;
   const isTerminalGame =
     game.status === "completed" || game.status === "cancelled";
+  const canCancelGame =
+    !isTerminalGame && (isAdmin || (isCreator && game.status === "lobby"));
   const missionRules = avalonMissionRulesByPlayerCount[game.config.playerCount];
   const nominationQuest =
     actionRequired?.type === "avalon.nominateTeammates"
@@ -507,6 +511,11 @@ export function AvalonTableCard({
         )}
         <span>شروع</span>
       </button>,
+    );
+  }
+
+  if (isTableView && canCancelGame) {
+    actionButtons.push(
       <button
         className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md border border-error/50 bg-error px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-error-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
         disabled={
@@ -1059,7 +1068,7 @@ export function AvalonTableCard({
             </div>
 
             <div className="flex flex-wrap items-start gap-2">
-              {isTableView && isCreator && game.status === "lobby" ? (
+              {isAdmin && canCancelGame ? (
                 <button
                   className="btn btn-success btn-sm"
                   disabled={

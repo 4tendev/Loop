@@ -70,6 +70,13 @@ export default function Profile({ user }: { user: ApiUser }) {
               تاریخچه میزهای آوالون
             </Link>
           </li>
+          {user.type === "admin" ? (
+            <li>
+              <Link href="/admin" onClick={closeDrawer}>
+                پنل مدیریت
+              </Link>
+            </li>
+          ) : null}
           <li>
             <button
               className="text-error"

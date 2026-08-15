@@ -56,9 +56,13 @@ export function createAvalonWebSocketGateway({
           .filter(Boolean),
       ),
     );
-    const games = await getActiveAvalonGames({
+    const activeGames = await getActiveAvalonGames({
       includeGameIds: watchedGameIds,
     });
+    const hasAdminClient = targetClients.some((client) => client.adminMode);
+    const allGames = hasAdminClient
+      ? await getActiveAvalonGames({ includeAll: true })
+      : activeGames;
     snapshotVersion += 1;
 
     for (const client of targetClients) {
@@ -66,11 +70,13 @@ export function createAvalonWebSocketGateway({
         continue;
       }
 
+      const availableGames = client.adminMode ? allGames : activeGames;
       const clientGames = client.gameId
-        ? games.filter((game) => game.id === client.gameId)
-        : games.filter(
+        ? availableGames.filter((game) => game.id === client.gameId)
+        : availableGames.filter(
             (game) =>
-              game.status !== "completed" && game.status !== "cancelled",
+              client.adminMode ||
+              (game.status !== "completed" && game.status !== "cancelled"),
           );
 
       if (client.gameId) {
@@ -129,6 +135,8 @@ export function createAvalonWebSocketGateway({
 
     socket.user = user;
     socket.gameId = requestUrl.searchParams.get("gameId") || null;
+    socket.adminMode =
+      requestUrl.searchParams.get("admin") === "1" && user?.type === "admin";
     socket.latestGamesJson = "";
     socket.latestTableJson = "";
     clients.add(socket);

@@ -2293,9 +2293,15 @@ export async function cancelAvalonGame(gameId, userId) {
         ended_at = now()
       WHERE
         id = $1
-        AND creator_id = $2
-        AND status = 'lobby'
         AND status NOT IN ('completed', 'cancelled')
+        AND (
+          (creator_id = $2 AND status = 'lobby')
+          OR EXISTS (
+            SELECT 1
+            FROM users actor
+            WHERE actor.id = $2 AND actor.type = 'admin'
+          )
+        )
       RETURNING id
     `,
     [gameId, userId],
@@ -2304,7 +2310,7 @@ export async function cancelAvalonGame(gameId, userId) {
   if (!result.rows[0]) {
     return {
       ok: false,
-      message: "فقط سازنده می‌تواند بازی داخل لابی را لغو کند",
+      message: "فقط سازنده بازی داخل لابی یا مدیر می‌تواند بازی را لغو کند",
     };
   }
 

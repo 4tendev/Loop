@@ -1,6 +1,9 @@
 import { pool } from "./database.mjs";
 
-export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
+export async function getActiveAvalonGames({
+  includeGameIds = [],
+  includeAll = false,
+} = {}) {
   await ensureAvalonMessageColumns();
 
   const result = await pool.query(
@@ -297,12 +300,13 @@ export async function getActiveAvalonGames({ includeGameIds = [] } = {}) {
     LEFT JOIN avalon_seats seat ON seat.game_id = game.id
     LEFT JOIN users player ON player.id = seat.player_id
     WHERE
-      game.status NOT IN ('completed', 'cancelled')
+      $2::boolean
+      OR game.status NOT IN ('completed', 'cancelled')
       OR game.id::text = ANY($1::text[])
     GROUP BY game.id, creator.id
     ORDER BY game.created_at DESC
   `,
-    [includeGameIds],
+    [includeGameIds, includeAll],
   );
 
   return result.rows.map((row) => ({
