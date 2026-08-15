@@ -476,7 +476,6 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
       SELECT
         game.id,
         game.use_lady_of_the_lake AS "useLadyOfTheLake",
-        game.initial_lady_predecessor_seat_number AS "initialLadyPredecessorSeatNumber",
         (
           SELECT count(*)::integer
           FROM avalon_missions mission
@@ -520,12 +519,7 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
 
   const ladySeatResult = await client.query(
     `
-      WITH game_settings AS (
-        SELECT initial_lady_predecessor_seat_number
-        FROM avalon_games
-        WHERE id = $1
-      ),
-      first_quest AS (
+      WITH first_quest AS (
         SELECT quest.king_seat_id
         FROM avalon_quests quest
         INNER JOIN avalon_phases phase ON phase.id = quest.phase_id
@@ -557,24 +551,9 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
         SELECT occupied_seats.id, occupied_seats.number
         FROM occupied_seats
         CROSS JOIN first_quest_king
-        CROSS JOIN game_settings
         ORDER BY
-          CASE
-            WHEN game_settings.initial_lady_predecessor_seat_number IS NOT NULL
-              AND occupied_seats.number > game_settings.initial_lady_predecessor_seat_number
-            THEN 0
-            WHEN game_settings.initial_lady_predecessor_seat_number IS NOT NULL THEN 1
-            WHEN occupied_seats.number < first_quest_king.king_number THEN 0
-            ELSE 1
-          END,
-          CASE
-            WHEN game_settings.initial_lady_predecessor_seat_number IS NOT NULL
-            THEN occupied_seats.number
-          END,
-          CASE
-            WHEN game_settings.initial_lady_predecessor_seat_number IS NULL
-            THEN occupied_seats.number
-          END DESC
+          CASE WHEN occupied_seats.number < first_quest_king.king_number THEN 0 ELSE 1 END,
+          occupied_seats.number DESC
         LIMIT 1
       )
       SELECT occupied_seats.id, occupied_seats.number
@@ -2565,19 +2544,6 @@ export async function requestAvalonRematch(gameId, userId) {
       [gameId],
     );
     const lastKingSeatNumber = lastKingResult.rows[0]?.number ?? null;
-    const lastLadyResult = await client.query(
-      `
-        SELECT target_seat.number
-        FROM avalon_lady_checks lady_check
-        INNER JOIN avalon_phases phase ON phase.id = lady_check.phase_id
-        INNER JOIN avalon_seats target_seat ON target_seat.id = lady_check.target_seat_id
-        WHERE phase.game_id = $1
-        ORDER BY phase.created_at DESC, phase.id DESC
-        LIMIT 1
-      `,
-      [gameId],
-    );
-    const lastLadySeatNumber = lastLadyResult.rows[0]?.number ?? null;
     const roles = createShuffledAvalonRoles(game.playerCount, game.useOberon);
     const rematchResult = await client.query(
       `
@@ -2592,10 +2558,9 @@ export async function requestAvalonRematch(gameId, userId) {
           public_message,
           started_at,
           rematch_of_game_id,
-          initial_king_predecessor_seat_number,
-          initial_lady_predecessor_seat_number
+          initial_king_predecessor_seat_number
         )
-        VALUES ($1, $2, 'inProgress', $3, $4, $5, $6, $7, now(), $8, $9, $10)
+        VALUES ($1, $2, 'inProgress', $3, $4, $5, $6, $7, now(), $8, $9)
         RETURNING id
       `,
       [
@@ -2608,7 +2573,6 @@ export async function requestAvalonRematch(gameId, userId) {
         "Game started. Complete your night check.",
         gameId,
         lastKingSeatNumber,
-        lastLadySeatNumber,
       ],
     );
     const rematchGameId = rematchResult.rows[0]?.id;
