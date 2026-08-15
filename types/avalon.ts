@@ -138,6 +138,13 @@ export type AvalonGame = {
   createdAt: Date;
   startedAt: Date | null;
   endedAt: Date | null;
+  rematch?: {
+    expiresAt: Date;
+    voteCount: number;
+    requiredCount: number;
+    acceptedByCurrentUser: boolean;
+    gameId: string | null;
+  } | null;
   phases: Phase[];
 };
 

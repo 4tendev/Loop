@@ -1,3 +1,5 @@
+import { randomInt } from "node:crypto";
+
 import { pool } from "./database.mjs";
 import { blockTerminalAvalonGameAction } from "./game-status.mjs";
 
@@ -68,6 +70,28 @@ const AVALON_MISSION_RULES_BY_PLAYER_COUNT = {
     { players: 5, minimumFailures: 1 },
   ],
 };
+
+function createShuffledAvalonRoles(playerCount, useOberon) {
+  const evilRoles = [
+    "assassin",
+    "morgana",
+    "mordred",
+    ...(playerCount >= 8 && useOberon ? ["oberon"] : []),
+  ];
+  const roles = [
+    "merlin",
+    "percival",
+    ...Array(Math.max(playerCount - evilRoles.length - 2, 0)).fill("servant"),
+    ...evilRoles,
+  ];
+
+  for (let index = roles.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomInt(index + 1);
+    [roles[index], roles[swapIndex]] = [roles[swapIndex], roles[index]];
+  }
+
+  return roles;
+}
 
 function formatAvalonSeatList(
   seats,
@@ -452,6 +476,7 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
       SELECT
         game.id,
         game.use_lady_of_the_lake AS "useLadyOfTheLake",
+        game.initial_lady_predecessor_seat_number AS "initialLadyPredecessorSeatNumber",
         (
           SELECT count(*)::integer
           FROM avalon_missions mission
@@ -495,7 +520,12 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
 
   const ladySeatResult = await client.query(
     `
-      WITH first_quest AS (
+      WITH game_settings AS (
+        SELECT initial_lady_predecessor_seat_number
+        FROM avalon_games
+        WHERE id = $1
+      ),
+      first_quest AS (
         SELECT quest.king_seat_id
         FROM avalon_quests quest
         INNER JOIN avalon_phases phase ON phase.id = quest.phase_id
@@ -527,9 +557,24 @@ async function createAvalonLadyOfTheLakePhaseWithClient(client, gameId) {
         SELECT occupied_seats.id, occupied_seats.number
         FROM occupied_seats
         CROSS JOIN first_quest_king
+        CROSS JOIN game_settings
         ORDER BY
-          CASE WHEN occupied_seats.number < first_quest_king.king_number THEN 0 ELSE 1 END,
-          occupied_seats.number DESC
+          CASE
+            WHEN game_settings.initial_lady_predecessor_seat_number IS NOT NULL
+              AND occupied_seats.number > game_settings.initial_lady_predecessor_seat_number
+            THEN 0
+            WHEN game_settings.initial_lady_predecessor_seat_number IS NOT NULL THEN 1
+            WHEN occupied_seats.number < first_quest_king.king_number THEN 0
+            ELSE 1
+          END,
+          CASE
+            WHEN game_settings.initial_lady_predecessor_seat_number IS NOT NULL
+            THEN occupied_seats.number
+          END,
+          CASE
+            WHEN game_settings.initial_lady_predecessor_seat_number IS NULL
+            THEN occupied_seats.number
+          END DESC
         LIMIT 1
       )
       SELECT occupied_seats.id, occupied_seats.number
@@ -1051,7 +1096,9 @@ async function createQuestPhase(client, gameId) {
   const progressSummary = await getAvalonGameProgressSummary(client, gameId);
   const gameResult = await client.query(
     `
-      SELECT player_count AS "playerCount"
+      SELECT
+        player_count AS "playerCount",
+        initial_king_predecessor_seat_number AS "initialKingPredecessorSeatNumber"
       FROM avalon_games
       WHERE id = $1
     `,
@@ -1083,7 +1130,11 @@ async function createQuestPhase(client, gameId) {
         number
       LIMIT 1
     `,
-    [gameId, progressSummary.lastQuestKingSeatNumber],
+    [
+      gameId,
+      progressSummary.lastQuestKingSeatNumber ??
+        game.initialKingPredecessorSeatNumber,
+    ],
   );
   const kingSeat = kingSeatResult.rows[0];
 
@@ -2392,6 +2443,202 @@ export async function startAvalonGame(gameId, userId) {
       message: "بازی شروع شد",
       gameId: result.rows[0].id,
       startedAt: result.rows[0].startedAt,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function requestAvalonRematch(gameId, userId) {
+  if (typeof gameId !== "string" || gameId.length === 0) {
+    return { ok: false, message: "Invalid game ID" };
+  }
+
+  if (!userId) {
+    return { ok: false, message: "You must sign in to request a rematch" };
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      `avalon_game_rematch:${gameId}`,
+    ]);
+
+    const gameResult = await client.query(
+      `
+        SELECT
+          game.id,
+          game.creator_id AS "creatorId",
+          game.table_name AS "tableName",
+          game.status,
+          game.player_count AS "playerCount",
+          game.use_oberon AS "useOberon",
+          game.use_lady_of_the_lake AS "useLadyOfTheLake",
+          game.role_exposing AS "roleExposing",
+          game.ended_at AS "endedAt",
+          rematch_game.id AS "rematchGameId"
+        FROM avalon_games game
+        LEFT JOIN avalon_games rematch_game
+          ON rematch_game.rematch_of_game_id = game.id
+        WHERE game.id = $1
+        FOR UPDATE OF game
+      `,
+      [gameId],
+    );
+    const game = gameResult.rows[0];
+
+    if (!game || game.status !== "completed" || !game.endedAt) {
+      await client.query("ROLLBACK");
+      return { ok: false, message: "Only a completed game can be rematched" };
+    }
+
+    if (game.rematchGameId) {
+      await client.query("COMMIT");
+      return {
+        ok: true,
+        message: "The rematch has already started",
+        gameId,
+        rematchGameId: game.rematchGameId,
+      };
+    }
+
+    const deadline = new Date(game.endedAt).getTime() + 60 * 60 * 1000;
+    if (Date.now() > deadline) {
+      await client.query("ROLLBACK");
+      return { ok: false, message: "The one-hour rematch window has expired" };
+    }
+
+    const seatsResult = await client.query(
+      `
+        SELECT id, number, player_id AS "playerId"
+        FROM avalon_seats
+        WHERE game_id = $1 AND player_id IS NOT NULL
+        ORDER BY number
+      `,
+      [gameId],
+    );
+    const seats = seatsResult.rows;
+
+    if (!seats.some((seat) => seat.playerId === userId)) {
+      await client.query("ROLLBACK");
+      return { ok: false, message: "Only players from this game can vote for a rematch" };
+    }
+
+    await client.query(
+      `
+        INSERT INTO avalon_rematch_votes (game_id, player_id)
+        VALUES ($1, $2)
+        ON CONFLICT (game_id, player_id) DO NOTHING
+      `,
+      [gameId, userId],
+    );
+    const voteCountResult = await client.query(
+      `SELECT count(*)::integer AS count FROM avalon_rematch_votes WHERE game_id = $1`,
+      [gameId],
+    );
+    const voteCount = voteCountResult.rows[0]?.count ?? 0;
+
+    if (voteCount < seats.length) {
+      await client.query("COMMIT");
+      return {
+        ok: true,
+        message: `Rematch accepted (${voteCount}/${seats.length})`,
+        gameId,
+      };
+    }
+
+    const lastKingResult = await client.query(
+      `
+        SELECT king_seat.number
+        FROM avalon_quests quest
+        INNER JOIN avalon_phases phase ON phase.id = quest.phase_id
+        INNER JOIN avalon_seats king_seat ON king_seat.id = quest.king_seat_id
+        WHERE phase.game_id = $1
+        ORDER BY phase.created_at DESC, phase.id DESC
+        LIMIT 1
+      `,
+      [gameId],
+    );
+    const lastKingSeatNumber = lastKingResult.rows[0]?.number ?? null;
+    const lastLadyResult = await client.query(
+      `
+        SELECT target_seat.number
+        FROM avalon_lady_checks lady_check
+        INNER JOIN avalon_phases phase ON phase.id = lady_check.phase_id
+        INNER JOIN avalon_seats target_seat ON target_seat.id = lady_check.target_seat_id
+        WHERE phase.game_id = $1
+        ORDER BY phase.created_at DESC, phase.id DESC
+        LIMIT 1
+      `,
+      [gameId],
+    );
+    const lastLadySeatNumber = lastLadyResult.rows[0]?.number ?? null;
+    const roles = createShuffledAvalonRoles(game.playerCount, game.useOberon);
+    const rematchResult = await client.query(
+      `
+        INSERT INTO avalon_games (
+          creator_id,
+          table_name,
+          status,
+          player_count,
+          use_oberon,
+          use_lady_of_the_lake,
+          role_exposing,
+          public_message,
+          started_at,
+          rematch_of_game_id,
+          initial_king_predecessor_seat_number,
+          initial_lady_predecessor_seat_number
+        )
+        VALUES ($1, $2, 'inProgress', $3, $4, $5, $6, $7, now(), $8, $9, $10)
+        RETURNING id
+      `,
+      [
+        game.creatorId,
+        game.tableName,
+        game.playerCount,
+        game.useOberon,
+        game.useLadyOfTheLake,
+        game.roleExposing,
+        "Game started. Complete your night check.",
+        gameId,
+        lastKingSeatNumber,
+        lastLadySeatNumber,
+      ],
+    );
+    const rematchGameId = rematchResult.rows[0]?.id;
+
+    if (!rematchGameId) {
+      throw new Error("Expected created Avalon rematch game");
+    }
+
+    await client.query(
+      `
+        INSERT INTO avalon_seats (game_id, role, number, player_id, private_message)
+        SELECT $1, rematch_seat.role, rematch_seat.number, rematch_seat.player_id, ''
+        FROM unnest($2::text[], $3::integer[], $4::uuid[])
+          AS rematch_seat(role, number, player_id)
+      `,
+      [
+        rematchGameId,
+        roles,
+        seats.map((seat) => seat.number),
+        seats.map((seat) => seat.playerId),
+      ],
+    );
+    await createNightPhase(client, rematchGameId);
+    await client.query("COMMIT");
+
+    return {
+      ok: true,
+      message: "Everyone accepted. The rematch has started!",
+      gameId,
+      rematchGameId,
     };
   } catch (error) {
     await client.query("ROLLBACK");

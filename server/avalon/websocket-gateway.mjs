@@ -240,8 +240,21 @@ export function createAvalonWebSocketGateway({
         (phase) => phase.type === "assassination" && phase.endedAt === null,
       );
 
+    const { rematch, ...publicGame } = game;
+
     return {
-      ...game,
+      ...publicGame,
+      rematch: rematch
+        ? {
+            expiresAt: rematch.expiresAt,
+            voteCount: rematch.voterIds.length,
+            requiredCount: rematch.requiredCount,
+            acceptedByCurrentUser: Boolean(
+              user && rematch.voterIds.includes(user.id),
+            ),
+            gameId: rematch.gameId,
+          }
+        : null,
       phases: game.phases.map((phase) =>
         sanitizePhaseForClient(phase, ownSeat, game),
       ),
@@ -402,6 +415,16 @@ export function createAvalonWebSocketGateway({
           errorMessage: "شروع بازی انجام نشد",
           logMessage: "Failed to start Avalon game",
           resultType: "avalon.startGame.result",
+        });
+      }
+
+      if (message?.type === "avalon.rematch") {
+        runAction(socket, {
+          action: () =>
+            actions.requestAvalonRematch(message.data?.gameId, socket.user?.id),
+          errorMessage: "Rematch request was not saved",
+          logMessage: "Failed to request Avalon rematch",
+          resultType: "avalon.rematch.result",
         });
       }
 

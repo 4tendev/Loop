@@ -11,6 +11,7 @@ import {
   leaveAvalonSeat,
   nightAlreadyCheckAvalonGame,
   nominateAvalonTeammates,
+  requestAvalonRematch,
   startAvalonGame,
   voteAvalonMission,
 } from "./avalon/game-actions.mjs";
@@ -39,6 +40,7 @@ const gateway = createAvalonWebSocketGateway({
     leaveAvalonSeat,
     nightAlreadyCheckAvalonGame,
     nominateAvalonTeammates,
+    requestAvalonRematch,
     startAvalonGame,
     voteAvalonMission,
   },

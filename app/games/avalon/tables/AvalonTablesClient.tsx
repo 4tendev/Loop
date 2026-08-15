@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/app/providers/UserProvider";
 
 import { AvalonTableCard } from "./AvalonTableCard";
@@ -16,6 +18,7 @@ export default function AvalonTablesClient({
   adminMode = false,
 }: AvalonTablesClientProps) {
   const { user, isCheckingUser } = useUser();
+  const router = useRouter();
   const isTableView = Boolean(tableId);
   const {
     games,
@@ -27,6 +30,7 @@ export default function AvalonTablesClient({
     notice,
     cancellingGameId,
     startingGameId,
+    pendingRematchGameId,
     selectedSeatByGame,
     selectedTeamSeatsByQuest,
     selectedLadyTargetByCheck,
@@ -69,6 +73,13 @@ export default function AvalonTablesClient({
     connectionStatus === "connected" &&
     currentUserId !== null &&
     !hasActiveCreatedGame;
+
+  useEffect(() => {
+    const rematchGameId = tableSnapshot?.tableInfo?.rematch?.gameId;
+    if (tableId && rematchGameId) {
+      router.replace(`/games/avalon/tables/${rematchGameId}`);
+    }
+  }, [router, tableId, tableSnapshot?.tableInfo?.rematch?.gameId]);
 
   return (
     <main
@@ -187,6 +198,7 @@ export default function AvalonTablesClient({
                     onSelectLadyTarget={actions.selectLadyTarget}
                     onSelectSeat={actions.selectSeat}
                     onStartGame={actions.startGame}
+                    onRequestRematch={actions.requestRematch}
                     onToggleTeamSeat={actions.toggleTeamSeat}
                     pendingAssassinActionId={pendingAssassinActionId}
                     pendingDecisionQuestId={pendingDecisionQuestId}
@@ -194,6 +206,7 @@ export default function AvalonTablesClient({
                     pendingLadyTargetId={pendingLadyTargetId}
                     pendingNominationQuestId={pendingNominationQuestId}
                     pendingSeatGameId={pendingSeatGameId}
+                    pendingRematchGameId={pendingRematchGameId}
                     privateMessage={tableSnapshot?.privateMessage ?? null}
                     selectedSeatId={selectedSeatByGame[game.id] ?? null}
                     selectedTeamSeatIds={

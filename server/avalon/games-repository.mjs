@@ -21,6 +21,16 @@ export async function getActiveAvalonGames({
       game.created_at AS "createdAt",
       game.started_at AS "startedAt",
       game.ended_at AS "endedAt",
+      game.initial_king_predecessor_seat_number AS "initialKingPredecessorSeatNumber",
+      rematch_game.id AS "rematchGameId",
+      COALESCE(
+        (
+          SELECT json_agg(rematch_vote.player_id)
+          FROM avalon_rematch_votes rematch_vote
+          WHERE rematch_vote.game_id = game.id
+        ),
+        '[]'::json
+      ) AS "rematchVoterIds",
       creator.id AS "creatorId",
       creator.name AS "creatorName",
       creator.profile_image AS "creatorProfileImage",
@@ -299,11 +309,12 @@ export async function getActiveAvalonGames({
     INNER JOIN users creator ON creator.id = game.creator_id
     LEFT JOIN avalon_seats seat ON seat.game_id = game.id
     LEFT JOIN users player ON player.id = seat.player_id
+    LEFT JOIN avalon_games rematch_game ON rematch_game.rematch_of_game_id = game.id
     WHERE
       $2::boolean
       OR game.status NOT IN ('completed', 'cancelled')
       OR game.id::text = ANY($1::text[])
-    GROUP BY game.id, creator.id
+    GROUP BY game.id, creator.id, rematch_game.id
     ORDER BY game.created_at DESC
   `,
     [includeGameIds, includeAll],
@@ -331,6 +342,15 @@ export async function getActiveAvalonGames({
     createdAt: row.createdAt,
     startedAt: row.startedAt,
     endedAt: row.endedAt,
+    initialKingPredecessorSeatNumber: row.initialKingPredecessorSeatNumber,
+    rematch: row.endedAt
+      ? {
+          expiresAt: new Date(new Date(row.endedAt).getTime() + 60 * 60 * 1000),
+          voterIds: row.rematchVoterIds,
+          requiredCount: row.seats.filter((seat) => seat.player !== null).length,
+          gameId: row.rematchGameId,
+        }
+      : null,
     phases: row.phases,
   }));
 }

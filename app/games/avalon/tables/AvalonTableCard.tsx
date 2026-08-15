@@ -21,6 +21,7 @@ type AvalonTableCardProps = {
   selectedSeatId: string | null;
   cancellingGameId: string | null;
   startingGameId: string | null;
+  pendingRematchGameId: string | null;
   pendingSeatGameId: string | null;
   pendingNominationQuestId: string | null;
   pendingDecisionQuestId: string | null;
@@ -34,6 +35,7 @@ type AvalonTableCardProps = {
   selectedAssassinTargetSeatId: string | null;
   onCancelGame: (gameId: string) => void;
   onStartGame: (gameId: string) => void;
+  onRequestRematch: (gameId: string) => void;
   onSelectSeat: (game: AvalonWsGame, seat: AvalonWsSeat) => void;
   onToggleTeamSeat: (
     questId: string,
@@ -84,6 +86,7 @@ export function AvalonTableCard({
   selectedSeatId,
   cancellingGameId,
   startingGameId,
+  pendingRematchGameId,
   pendingSeatGameId,
   pendingNominationQuestId,
   pendingDecisionQuestId,
@@ -97,6 +100,7 @@ export function AvalonTableCard({
   selectedAssassinTargetSeatId,
   onCancelGame,
   onStartGame,
+  onRequestRematch,
   onSelectSeat,
   onToggleTeamSeat,
   onSelectLadyTarget,
@@ -120,6 +124,7 @@ export function AvalonTableCard({
     ? game.seats.find((seat) => seat.id === selectedSeatId)
     : null;
   const [isLobbyJoinGuideOpen, setIsLobbyJoinGuideOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const lobbyJoinGuideGameIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -165,6 +170,13 @@ export function AvalonTableCard({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isLobbyJoinGuideOpen]);
+
+  useEffect(() => {
+    if (!game.rematch || game.rematch.gameId) return;
+
+    const interval = window.setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [game.rematch]);
   const isCreator = userId === game.creator.id || wsUserId === game.creator.id;
   const isFull = game.occupiedSeatCount === game.config.playerCount;
   const isTerminalGame =
@@ -490,6 +502,45 @@ export function AvalonTableCard({
   }
 
   const actionButtons = [];
+  const rematchMillisecondsRemaining = game.rematch
+    ? Math.max(0, new Date(game.rematch.expiresAt).getTime() - currentTime)
+    : 0;
+  const rematchMinutesRemaining = Math.ceil(
+    rematchMillisecondsRemaining / (60 * 1000),
+  );
+
+  if (
+    isTableView &&
+    game.status === "completed" &&
+    ownSeat &&
+    game.rematch &&
+    !game.rematch.gameId
+  ) {
+    actionButtons.push(
+      <button
+        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-primary px-2 py-1 text-[0.65rem] font-bold leading-tight text-primary-content disabled:opacity-45"
+        disabled={
+          game.rematch.acceptedByCurrentUser ||
+          rematchMillisecondsRemaining <= 0 ||
+          pendingRematchGameId === game.id ||
+          connectionStatus !== "connected"
+        }
+        key="rematch"
+        onClick={() => onRequestRematch(game.id)}
+        type="button"
+      >
+        {pendingRematchGameId === game.id ? (
+          <span className="loading loading-spinner loading-xs" />
+        ) : (
+          <span className="text-sm leading-none">↻</span>
+        )}
+        <span>
+          {game.rematch.acceptedByCurrentUser ? "Rematch accepted" : "Rematch"}
+          {` · ${game.rematch.voteCount}/${game.rematch.requiredCount} · ${rematchMinutesRemaining}m`}
+        </span>
+      </button>,
+    );
+  }
 
   if (isTableView && isCreator && game.status === "lobby") {
     actionButtons.push(

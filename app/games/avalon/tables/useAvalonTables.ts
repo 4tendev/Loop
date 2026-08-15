@@ -30,6 +30,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
   const [notice, setNotice] = useState<string | null>(null);
   const [cancellingGameId, setCancellingGameId] = useState<string | null>(null);
   const [startingGameId, setStartingGameId] = useState<string | null>(null);
+  const [pendingRematchGameId, setPendingRematchGameId] = useState<string | null>(null);
   const [selectedSeatByGame, setSelectedSeatByGame] = useState<
     Record<string, string | null>
   >({});
@@ -62,6 +63,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
   const [wsUrl, setWsUrl] = useState("در انتظار مرورگر");
   const [canCancelFromWs, setCanCancelFromWs] = useState(false);
   const [canStartFromWs, setCanStartFromWs] = useState(false);
+  const [canRematchFromWs, setCanRematchFromWs] = useState(false);
   const [canChangeSeatFromWs, setCanChangeSeatFromWs] = useState(false);
   const [canNominateTeammatesFromWs, setCanNominateTeammatesFromWs] =
     useState(false);
@@ -75,6 +77,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
   const socketRef = useRef<WebSocket | null>(null);
   const cancelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rematchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nightCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -148,6 +151,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
       if (
         message.type !== "avalon.cancelGame.result" &&
         message.type !== "avalon.startGame.result" &&
+        message.type !== "avalon.rematch.result" &&
         message.type !== "avalon.seat.result" &&
         message.type !== "avalon.nightAlreadyCheck.result" &&
         message.type !== "avalon.nominateTeammates.result" &&
@@ -175,6 +179,15 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
         }
 
         setStartingGameId(null);
+      }
+
+      if (message.type === "avalon.rematch.result") {
+        if (rematchTimeoutRef.current) {
+          clearTimeout(rematchTimeoutRef.current);
+          rematchTimeoutRef.current = null;
+        }
+
+        setPendingRematchGameId(null);
       }
 
       if (message.type === "avalon.seat.result") {
@@ -284,6 +297,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
       setConnectionStatus("connecting");
       setCanCancelFromWs(false);
       setCanStartFromWs(false);
+      setCanRematchFromWs(false);
       setCanChangeSeatFromWs(false);
       setCanNominateTeammatesFromWs(false);
       setCanNightAlreadyCheckFromWs(false);
@@ -320,6 +334,9 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
             );
             setCanStartFromWs(
               message.data.capabilities?.includes("avalon.startGame") ?? false,
+            );
+            setCanRematchFromWs(
+              message.data.capabilities?.includes("avalon.rematch") ?? false,
             );
             setCanChangeSeatFromWs(
               (message.data.capabilities?.includes("avalon.joinSeat") &&
@@ -440,6 +457,11 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
         startTimeoutRef.current = null;
       }
 
+      if (rematchTimeoutRef.current) {
+        clearTimeout(rematchTimeoutRef.current);
+        rematchTimeoutRef.current = null;
+      }
+
       if (nightCheckTimeoutRef.current) {
         clearTimeout(nightCheckTimeoutRef.current);
         nightCheckTimeoutRef.current = null;
@@ -549,6 +571,28 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
       )
     ) {
       setStartingGameId(null);
+    }
+  }
+
+  function requestRematch(gameId: string) {
+    if (!canRematchFromWs) {
+      setError("The rematch action is not available. Restart the Avalon server.");
+      return;
+    }
+
+    setPendingRematchGameId(gameId);
+    rematchTimeoutRef.current = setTimeout(() => {
+      setPendingRematchGameId(null);
+      setError("The rematch request timed out.");
+    }, ACTION_TIMEOUT_MS);
+
+    if (
+      !sendSocketMessage(
+        { type: "avalon.rematch", data: { gameId } },
+        SOCKET_UNAVAILABLE_MESSAGE,
+      )
+    ) {
+      setPendingRematchGameId(null);
     }
   }
 
@@ -950,6 +994,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
     notice,
     cancellingGameId,
     startingGameId,
+    pendingRematchGameId,
     selectedSeatByGame,
     selectedTeamSeatsByQuest,
     selectedLadyTargetByCheck,
@@ -964,6 +1009,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
     actions: {
       cancelGame,
       startGame,
+      requestRematch,
       selectSeat,
       toggleTeamSeat,
       selectLadyTarget,

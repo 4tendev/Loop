@@ -37,6 +37,13 @@ export type AvalonWsGame = {
   createdAt: string;
   startedAt: string | null;
   endedAt: string | null;
+  rematch: {
+    expiresAt: string;
+    voteCount: number;
+    requiredCount: number;
+    acceptedByCurrentUser: boolean;
+    gameId: string | null;
+  } | null;
   phases: AvalonWsPhase[];
 };
 
@@ -162,6 +169,7 @@ export type AvalonWsMessage =
       type:
         | "avalon.cancelGame.result"
         | "avalon.startGame.result"
+        | "avalon.rematch.result"
         | "avalon.seat.result"
         | "avalon.nightAlreadyCheck.result"
         | "avalon.nominateTeammates.result"

@@ -1,6 +1,7 @@
 export const avalonActionTypes = [
   "avalon.cancelGame",
   "avalon.startGame",
+  "avalon.rematch",
   "avalon.joinSeat",
   "avalon.changeSeat",
   "avalon.leaveSeat",
@@ -26,6 +27,7 @@ export type AvalonActionResult = {
   ok: boolean;
   message: string;
   gameId?: string;
+  rematchGameId?: string;
   startedAt?: string;
   seatId?: string;
   nightCheckId?: string;

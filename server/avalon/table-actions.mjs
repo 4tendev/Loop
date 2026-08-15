@@ -3,6 +3,7 @@ export const avalonTableActionTypes = [
   "avalon.changeSeat",
   "avalon.leaveSeat",
   "avalon.startGame",
+  "avalon.rematch",
   "avalon.cancelGame",
   "avalon.nightAlreadyCheck",
   "avalon.nominateTeammates",
