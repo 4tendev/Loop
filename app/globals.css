@@ -10,9 +10,9 @@
   prefersdark: false;
   color-scheme: light;
 
-  --color-base-100: oklch(99% 0.008 75);
-  --color-base-200: oklch(96.5% 0.018 315);
-  --color-base-300: oklch(92% 0.03 310);
+  --color-base-100: oklch(99.2% 0.004 80);
+  --color-base-200: oklch(96.8% 0.007 80);
+  --color-base-300: oklch(92.5% 0.012 75);
   --color-base-content: oklch(24% 0.04 292);
   --color-primary: oklch(55% 0.25 292);
   --color-primary-content: oklch(98% 0.01 300);
@@ -93,11 +93,7 @@ body {
 }
 
 [data-theme="loop-light"] .loop-navbar {
-  background-color: color-mix(
-    in oklab,
-    var(--color-primary) 1.5%,
-    var(--color-base-200)
-  );
+  background-color: var(--color-base-200);
   border-color: color-mix(
     in oklab,
     var(--color-primary) 8%,
