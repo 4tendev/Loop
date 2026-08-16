@@ -5,6 +5,7 @@ import { QueryResultRow } from "pg";
 import { apiResponse, badRequest, serverError, unauthorized } from "@/lib/api-response";
 import { getUserSessionFromRequest } from "@/lib/auth/session";
 import { getPostgresPool } from "@/lib/postgres";
+import { createAvalonVoiceRoom } from "@/server/avalon/livekit.mjs";
 import type {
   AvalonGame,
   AvalonGameConfig,
@@ -303,6 +304,8 @@ export async function POST(request: NextRequest) {
       `,
       [game.id, roles, roles.map((_, index) => index + 1)],
     );
+
+    await createAvalonVoiceRoom(game.id);
 
     await client.query("COMMIT");
 

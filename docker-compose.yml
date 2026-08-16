@@ -21,6 +21,9 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://loop:loop@postgres:5432/loop
       REDIS_URL: redis://redis:6379
+      LIVEKIT_URL: ${LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
     expose:
       - "3000"
     depends_on:
@@ -41,6 +44,9 @@ services:
       AVALON_WS_PORT: 3001
       DATABASE_URL: postgresql://loop:loop@postgres:5432/loop
       REDIS_URL: redis://redis:6379
+      LIVEKIT_URL: ${LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
     expose:
       - "3001"
     depends_on:

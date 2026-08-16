@@ -2,6 +2,10 @@ import { randomInt } from "node:crypto";
 
 import { pool } from "./database.mjs";
 import { blockTerminalAvalonGameAction } from "./game-status.mjs";
+import {
+  createAvalonVoiceRoom,
+  removeAvalonVoiceParticipant,
+} from "./livekit.mjs";
 
 const AVALON_ROLE_LABELS = {
   merlin: "مرلین",
@@ -2598,6 +2602,7 @@ export async function requestAvalonRematch(gameId, userId) {
       ],
     );
     await createNightPhase(client, rematchGameId);
+    await createAvalonVoiceRoom(rematchGameId);
     await client.query("COMMIT");
 
     return {
@@ -2854,6 +2859,12 @@ export async function leaveAvalonSeat(gameId, userId) {
       ok: false,
       message: "فقط صندلی خودتان را در لابی می‌توانید ترک کنید",
     };
+  }
+
+  try {
+    await removeAvalonVoiceParticipant(gameId, userId);
+  } catch (error) {
+    console.error("Failed to remove participant from Avalon voice room", error);
   }
 
   return {

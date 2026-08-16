@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         INNER JOIN avalon_seats AS seat ON seat.game_id = game.id
         WHERE
           game.id = $1
-          AND game.status = 'inProgress'
+          AND game.status IN ('lobby', 'inProgress')
           AND seat.player_id = $2
         LIMIT 1
       `,
