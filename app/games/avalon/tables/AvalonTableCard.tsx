@@ -555,7 +555,10 @@ export function AvalonTableCard({
             {voiceChat.isMuted ? "🔇" : "🎙️"}
           </span>
         )}
-        <span>{voiceChat.isMuted ? "میکروفن خاموش" : "میکروفن روشن"}</span>
+        <span>
+          {voiceChat.isMuted ? "میکروفن خاموش" : "میکروفن روشن"}
+          {` · ${voiceChat.connectedPeerCount} متصل`}
+        </span>
       </button>,
     );
 

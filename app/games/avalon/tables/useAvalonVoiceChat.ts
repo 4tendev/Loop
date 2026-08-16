@@ -187,6 +187,9 @@ export function useAvalonVoiceChat({
         if (controller.signal.aborted) return;
         console.error("Failed to load temporary TURN credentials", requestError);
         setIceConfiguration({ gameId, servers: fallbackIceServers });
+        setError(
+          "اتصال پشتیبان صوتی آماده نشد؛ اتصال مستقیم در حال امتحان است.",
+        );
       }
     })();
 
@@ -332,7 +335,7 @@ export function useAvalonVoiceChat({
       }
       setIsMuted(true);
       setError(null);
-      setIsPlaybackBlocked(false);
+      setIsPlaybackBlocked(Boolean(nextGameId));
     }
     activeGameIdRef.current = nextGameId;
 
