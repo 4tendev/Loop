@@ -23,6 +23,7 @@ export async function getActiveAvalonGames({
       game.ended_at AS "endedAt",
       game.initial_king_predecessor_seat_number AS "initialKingPredecessorSeatNumber",
       rematch_game.id AS "rematchGameId",
+      rematch_game.status AS "rematchGameStatus",
       COALESCE(
         (
           SELECT json_agg(rematch_vote.player_id)
@@ -314,7 +315,7 @@ export async function getActiveAvalonGames({
       $2::boolean
       OR game.status NOT IN ('completed', 'cancelled')
       OR game.id::text = ANY($1::text[])
-    GROUP BY game.id, creator.id, rematch_game.id
+    GROUP BY game.id, creator.id, rematch_game.id, rematch_game.status
     ORDER BY game.created_at DESC
   `,
     [includeGameIds, includeAll],
@@ -349,6 +350,7 @@ export async function getActiveAvalonGames({
           voterIds: row.rematchVoterIds,
           requiredCount: row.seats.filter((seat) => seat.player !== null).length,
           gameId: row.rematchGameId,
+          gameStatus: row.rematchGameStatus,
         }
       : null,
     phases: row.phases,

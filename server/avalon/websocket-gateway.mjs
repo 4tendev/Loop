@@ -253,6 +253,7 @@ export function createAvalonWebSocketGateway({
               user && rematch.voterIds.includes(user.id),
             ),
             gameId: rematch.gameId,
+            gameStatus: rematch.gameStatus,
           }
         : null,
       phases: game.phases.map((phase) =>

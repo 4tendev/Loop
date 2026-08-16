@@ -75,11 +75,11 @@ export default function AvalonTablesClient({
     !hasActiveCreatedGame;
 
   useEffect(() => {
-    const rematchGameId = tableSnapshot?.tableInfo?.rematch?.gameId;
-    if (tableId && rematchGameId) {
-      router.replace(`/games/avalon/tables/${rematchGameId}`);
+    const rematch = tableSnapshot?.tableInfo?.rematch;
+    if (tableId && rematch?.gameId && rematch.gameStatus === "inProgress") {
+      router.replace(`/games/avalon/tables/${rematch.gameId}`);
     }
-  }, [router, tableId, tableSnapshot?.tableInfo?.rematch?.gameId]);
+  }, [router, tableId, tableSnapshot?.tableInfo?.rematch]);
 
   return (
     <main

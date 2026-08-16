@@ -43,6 +43,7 @@ export type AvalonWsGame = {
     requiredCount: number;
     acceptedByCurrentUser: boolean;
     gameId: string | null;
+    gameStatus: AvalonGameStatus | null;
   } | null;
   phases: AvalonWsPhase[];
 };

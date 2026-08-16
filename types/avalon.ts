@@ -144,6 +144,7 @@ export type AvalonGame = {
     requiredCount: number;
     acceptedByCurrentUser: boolean;
     gameId: string | null;
+    gameStatus: AvalonGameStatus | null;
   } | null;
   phases: Phase[];
 };
