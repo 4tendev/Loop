@@ -7,8 +7,8 @@ import { UserProvider } from "./providers/UserProvider";
 const themeInitializer = `
   (function () {
     try {
-      var lightTheme = "cupcake";
-      var darkTheme = "synthwave";
+      var lightTheme = "loop-light";
+      var darkTheme = "loop-dark";
       var storageKey = "loop-theme";
       var savedTheme = localStorage.getItem(storageKey);
       var theme =
@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl" data-theme="halloween" suppressHydrationWarning>
+    <html lang="fa" dir="rtl" data-theme="loop-light" suppressHydrationWarning>
       <body className="h-dvh overflow-hidden flex flex-col">
         <Script
           id="theme-initializer"

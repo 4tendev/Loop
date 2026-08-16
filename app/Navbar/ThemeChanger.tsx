@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-const LIGHT_THEME = "cupcake";
-const DARK_THEME = "halloween";
+const LIGHT_THEME = "loop-light";
+const DARK_THEME = "loop-dark";
 const THEME_STORAGE_KEY = "loop-theme";
 
 type Theme = typeof LIGHT_THEME | typeof DARK_THEME;
