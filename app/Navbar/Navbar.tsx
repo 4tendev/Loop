@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import User from "./profile/User";
 import ThemeChanger from "./ThemeChanger";
@@ -5,24 +6,41 @@ import ActiveAvalonTableLink from "./ActiveAvalonTable";
 
 export default function Navbar() {
   return (
-    <div className=" flex bg-base-100 shadow-sm h-10 p-1 justify-center items-center">
-      <div className="">
-        <Link href="/">لوپ</Link>
-      </div>
-
-      <div className="flex flex-1 justify-center gap-2 p-1 h-8">
-        <Link href="/games/avalon" className="btn h-full btn-ghost btn-sm">
-          Avalon
+    <nav
+      aria-label="منوی اصلی"
+      className="h-full border-b border-base-300/70 bg-base-100/95 shadow-sm backdrop-blur"
+    >
+      <div className="mx-auto grid h-full w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 sm:gap-4 sm:px-5 lg:px-8">
+        <Link
+          href="/"
+          aria-label="صفحه اصلی لوپ"
+          className="flex size-11 items-center justify-center justify-self-start rounded-xl transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:size-12"
+        >
+          <Image
+            src="/loop-logo.png"
+            alt="لوپ"
+            width={48}
+            height={48}
+            priority
+            className="size-full object-contain"
+          />
         </Link>
-        <ActiveAvalonTableLink />
-      </div>
 
-      <div className="flex items-center h-8 gap-2 justify-center items-cent">
-        <ThemeChanger />
-        <div>
+        <div className="flex min-w-0 items-center justify-center gap-1.5 sm:gap-2">
+          <Link
+            href="/games/avalon"
+            className="btn btn-ghost h-10 min-h-10 px-3 text-sm sm:px-4"
+          >
+            Avalon
+          </Link>
+          <ActiveAvalonTableLink />
+        </div>
+
+        <div className="flex h-10 items-center justify-self-end gap-1 sm:gap-2">
+          <ThemeChanger />
           <User />
         </div>
       </div>
-    </div>
+    </nav>
   );
 }

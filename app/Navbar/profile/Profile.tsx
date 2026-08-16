@@ -35,7 +35,7 @@ export default function Profile({ user }: { user: ApiUser }) {
   }
 
   return (
-    <div className={`drawer  h-10 w-10 ${isDrawerOpen ? "z-[1000]" : ""}`}>
+    <div className={`drawer size-10 ${isDrawerOpen ? "z-[1000]" : ""}`}>
       <input
         id="my-drawer-1"
         type="checkbox"
@@ -44,7 +44,7 @@ export default function Profile({ user }: { user: ApiUser }) {
         onChange={(event) => setIsDrawerOpen(event.target.checked)}
       />
       <div className="drawer-content">
-        <label htmlFor="my-drawer-1" className="">
+        <label htmlFor="my-drawer-1" className="cursor-pointer">
           <ProfileDefaultImage
             profileImage={user.profileImage || "/avatar.png"}
           />

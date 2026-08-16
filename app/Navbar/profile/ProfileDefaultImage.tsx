@@ -8,16 +8,19 @@ export default function ProfileDefaultImage({
   profileImage: ApiUser["profileImage"];
 }) {
   return (
-    <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-      <div className="w-8 rounded-full">
+    <div
+      tabIndex={0}
+      role="button"
+      aria-label="حساب کاربری"
+      className="avatar btn btn-ghost btn-circle h-10 min-h-10 w-10 p-1"
+    >
+      <div className="size-8 rounded-full">
         <Image
-          alt="profile image"
-          role="button"
-          tabIndex={0}
+          alt="تصویر پروفایل"
           width={48}
           height={48}
           loading="eager"
-          className="rounded-full btn  p-0"
+          className="rounded-full object-cover"
           unoptimized
           src={getProfileImageSrc(profileImage)}
         />

@@ -80,7 +80,7 @@ export default function ActiveAvalonTableLink() {
     <Link
       href={`/games/avalon/tables/${table.id}`}
       aria-current={isCurrentTable ? "page" : undefined}
-      className={`btn btn-sm h-full min-h-0 gap-1 px-2 ${
+      className={`btn h-10 min-h-10 gap-1.5 px-2.5 text-sm sm:px-3 ${
         isCurrentTable ? "btn-primary" : "btn-warning btn-outline"
       }`}
       title={`ورود سریع به ${table.name} (${statusLabel}، ${table.playerCount} نفره)`}
