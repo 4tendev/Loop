@@ -8,7 +8,7 @@ export default function Navbar() {
   return (
     <nav
       aria-label="منوی اصلی"
-      className="h-full border-b border-base-300/70 bg-base-100/95 shadow-sm backdrop-blur"
+      className="loop-navbar h-full border-b border-base-300/70 bg-base-100/95 shadow-sm backdrop-blur"
     >
       <div className="mx-auto grid h-full w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 sm:gap-4 sm:px-5 lg:px-8">
         <Link
