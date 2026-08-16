@@ -24,7 +24,16 @@ type VoicePeer = {
   hasOffered: boolean;
 };
 
+type SpeakingMonitor = {
+  source: MediaStreamAudioSourceNode;
+  analyser: AnalyserNode;
+  samples: Uint8Array<ArrayBuffer>;
+  lastVoiceAt: number;
+};
+
 const defaultStunUrl = "stun:stun.l.google.com:19302";
+const speakingThreshold = 0.035;
+const speakingHoldMilliseconds = 300;
 
 const fallbackIceServers: RTCIceServer[] = [
   { urls: process.env.NEXT_PUBLIC_AVALON_STUN_URL || defaultStunUrl },
@@ -47,6 +56,7 @@ export function useAvalonVoiceChat({
   const [isRequestingPermission, setIsRequestingPermission] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectedPeerCount, setConnectedPeerCount] = useState(0);
+  const [speakingUserIds, setSpeakingUserIds] = useState<string[]>([]);
   const [iceConfiguration, setIceConfiguration] = useState<{
     gameId: string;
     servers: RTCIceServer[];
@@ -54,11 +64,96 @@ export function useAvalonVoiceChat({
   const peersRef = useRef(new Map<string, VoicePeer>());
   const localStreamRef = useRef<MediaStream | null>(null);
   const activeGameIdRef = useRef<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const speakingMonitorsRef = useRef(new Map<string, SpeakingMonitor>());
+  const speakingFrameRef = useRef<number | null>(null);
   const enabled = Boolean(
     game &&
       game.status === "inProgress" &&
       currentUserId &&
       game.seats.some((seat) => seat.player?.id === currentUserId),
+  );
+
+  const ensureSpeakingLoop = useCallback(() => {
+    if (speakingFrameRef.current !== null) return;
+
+    const sampleAudioLevels = () => {
+      const now = performance.now();
+      const activeSpeakers: string[] = [];
+
+      for (const [userId, monitor] of speakingMonitorsRef.current) {
+        monitor.analyser.getByteTimeDomainData(monitor.samples);
+        let sumOfSquares = 0;
+        for (const sample of monitor.samples) {
+          const normalizedSample = (sample - 128) / 128;
+          sumOfSquares += normalizedSample * normalizedSample;
+        }
+        const volume = Math.sqrt(sumOfSquares / monitor.samples.length);
+        if (volume >= speakingThreshold) monitor.lastVoiceAt = now;
+        if (now - monitor.lastVoiceAt <= speakingHoldMilliseconds) {
+          activeSpeakers.push(userId);
+        }
+      }
+
+      activeSpeakers.sort();
+      setSpeakingUserIds((current) => {
+        if (
+          current.length === activeSpeakers.length &&
+          current.every((userId, index) => userId === activeSpeakers[index])
+        ) {
+          return current;
+        }
+        return activeSpeakers;
+      });
+
+      if (speakingMonitorsRef.current.size > 0) {
+        speakingFrameRef.current = requestAnimationFrame(sampleAudioLevels);
+      } else {
+        speakingFrameRef.current = null;
+      }
+    };
+
+    speakingFrameRef.current = requestAnimationFrame(sampleAudioLevels);
+  }, []);
+
+  const stopSpeakingMonitor = useCallback((userId: string) => {
+    const monitor = speakingMonitorsRef.current.get(userId);
+    if (!monitor) return;
+    monitor.source.disconnect();
+    monitor.analyser.disconnect();
+    speakingMonitorsRef.current.delete(userId);
+    setSpeakingUserIds((current) => current.filter((id) => id !== userId));
+
+    if (speakingMonitorsRef.current.size === 0 && speakingFrameRef.current !== null) {
+      cancelAnimationFrame(speakingFrameRef.current);
+      speakingFrameRef.current = null;
+    }
+  }, []);
+
+  const startSpeakingMonitor = useCallback(
+    (userId: string, stream: MediaStream) => {
+      if (!stream.getAudioTracks().length || typeof AudioContext === "undefined") {
+        return;
+      }
+
+      stopSpeakingMonitor(userId);
+      const audioContext = audioContextRef.current ?? new AudioContext();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.65;
+      source.connect(analyser);
+      speakingMonitorsRef.current.set(userId, {
+        source,
+        analyser,
+        samples: new Uint8Array(analyser.fftSize),
+        lastVoiceAt: 0,
+      });
+      void audioContext.resume().catch(() => {});
+      ensureSpeakingLoop();
+    },
+    [ensureSpeakingLoop, stopSpeakingMonitor],
   );
 
   useEffect(() => {
@@ -118,10 +213,11 @@ export function useAvalonVoiceChat({
         peer.remoteAudio.pause();
         peer.remoteAudio.srcObject = null;
       }
+      stopSpeakingMonitor(peerId);
       peersRef.current.delete(peerId);
       updateConnectedPeerCount();
     },
-    [updateConnectedPeerCount],
+    [stopSpeakingMonitor, updateConnectedPeerCount],
   );
 
   const getOrCreatePeer = useCallback(
@@ -169,6 +265,7 @@ export function useAvalonVoiceChat({
         audio.setAttribute("playsinline", "");
         audio.srcObject = stream;
         peer.remoteAudio = audio;
+        startSpeakingMonitor(peerId, stream);
         void audio.play().catch(() => {
           // The next microphone-button click also retries remote playback.
         });
@@ -182,7 +279,12 @@ export function useAvalonVoiceChat({
 
       return peer;
     },
-    [iceConfiguration, transport, updateConnectedPeerCount],
+    [
+      iceConfiguration,
+      startSpeakingMonitor,
+      transport,
+      updateConnectedPeerCount,
+    ],
   );
 
   const sendOffer = useCallback(
@@ -218,6 +320,9 @@ export function useAvalonVoiceChat({
       }
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
+      for (const userId of Array.from(speakingMonitorsRef.current.keys())) {
+        stopSpeakingMonitor(userId);
+      }
       setIsMuted(true);
       setError(null);
     }
@@ -251,6 +356,7 @@ export function useAvalonVoiceChat({
     getOrCreatePeer,
     participantIds,
     sendOffer,
+    stopSpeakingMonitor,
   ]);
 
   useEffect(
@@ -319,6 +425,17 @@ export function useAvalonVoiceChat({
       peersRef.current.clear();
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
+      if (speakingFrameRef.current !== null) {
+        cancelAnimationFrame(speakingFrameRef.current);
+        speakingFrameRef.current = null;
+      }
+      for (const monitor of speakingMonitorsRef.current.values()) {
+        monitor.source.disconnect();
+        monitor.analyser.disconnect();
+      }
+      speakingMonitorsRef.current.clear();
+      void audioContextRef.current?.close();
+      audioContextRef.current = null;
     },
     [],
   );
@@ -357,6 +474,7 @@ export function useAvalonVoiceChat({
       const track = stream.getAudioTracks()[0];
       if (!track) throw new Error("No microphone track");
       track.enabled = true;
+      if (currentUserId) startSpeakingMonitor(currentUserId, stream);
 
       await Promise.all(
         Array.from(peersRef.current.values()).map(async (peer) => {
@@ -374,7 +492,13 @@ export function useAvalonVoiceChat({
     } finally {
       setIsRequestingPermission(false);
     }
-  }, [enabled, isMuted, isRequestingPermission]);
+  }, [
+    currentUserId,
+    enabled,
+    isMuted,
+    isRequestingPermission,
+    startSpeakingMonitor,
+  ]);
 
   return {
     enabled,
@@ -385,6 +509,7 @@ export function useAvalonVoiceChat({
     isMuted,
     isRequestingPermission,
     connectedPeerCount,
+    speakingUserIds,
     error,
     toggleMuted,
   };

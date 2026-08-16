@@ -36,6 +36,7 @@ type AvalonTableCardProps = {
     isMuted: boolean;
     isRequestingPermission: boolean;
     connectedPeerCount: number;
+    speakingUserIds: string[];
     error: string | null;
     toggleMuted: () => Promise<void>;
   };
@@ -479,6 +480,7 @@ export function AvalonTableCard({
     lastKingPlayerName: latestQuest?.kingPlayerName,
     revealedQuestDecisions,
     sleepingSeatIds,
+    speakingUserIds: voiceChat.speakingUserIds,
     onSelectSeat,
     onToggleTeamSeat,
     onSelectLadyTarget,
