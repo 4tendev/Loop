@@ -40,8 +40,8 @@ async function preprocessProfileImage(file: File) {
       image.src = objectUrl;
     });
 
-    const size = 400;
     const sourceSize = Math.max(1, Math.min(image.width, image.height));
+    const size = Math.min(512, sourceSize);
     const sourceX = Math.max(0, Math.floor((image.width - sourceSize) / 2));
     const sourceY = Math.max(0, Math.floor((image.height - sourceSize) / 2));
 
@@ -68,42 +68,15 @@ async function preprocessProfileImage(file: File) {
       size,
     );
 
-    const pixelStep = 8;
-    const tinyCanvas = document.createElement("canvas");
-    tinyCanvas.width = Math.max(1, Math.round(size / pixelStep));
-    tinyCanvas.height = Math.max(1, Math.round(size / pixelStep));
-
-    const tinyContext = tinyCanvas.getContext("2d");
-    if (!tinyContext) {
-      throw new Error("Canvas not supported");
-    }
-
-    tinyContext.imageSmoothingEnabled = false;
-    tinyContext.drawImage(canvas, 0, 0, tinyCanvas.width, tinyCanvas.height);
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
-    context.clearRect(0, 0, size, size);
-    context.drawImage(
-      tinyCanvas,
-      0,
-      0,
-      tinyCanvas.width,
-      tinyCanvas.height,
-      0,
-      0,
-      size,
-      size,
-    );
-
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.99),
+      canvas.toBlob(resolve, "image/webp", 0.82),
     );
     if (!blob) {
       throw new Error("Failed to export image");
     }
 
-    return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
-      type: "image/jpeg",
+    return new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
+      type: "image/webp",
     });
   } finally {
     URL.revokeObjectURL(objectUrl);

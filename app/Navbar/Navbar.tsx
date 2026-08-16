@@ -36,7 +36,7 @@ export default function Navbar() {
           <ActiveAvalonTableLink />
         </div>
 
-        <div className="flex h-10 items-center justify-self-end gap-1 sm:gap-2">
+        <div className="flex h-11 items-center justify-self-end gap-1 sm:gap-2">
           <ThemeChanger />
           <User />
         </div>

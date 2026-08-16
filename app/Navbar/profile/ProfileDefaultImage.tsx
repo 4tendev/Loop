@@ -12,9 +12,9 @@ export default function ProfileDefaultImage({
       tabIndex={0}
       role="button"
       aria-label="حساب کاربری"
-      className="avatar btn btn-ghost btn-circle h-10 min-h-10 w-10 p-1"
+      className="avatar btn btn-ghost btn-circle h-11 min-h-11 w-11 p-1"
     >
-      <div className="size-8 rounded-full">
+      <div className="size-9 rounded-full">
         <Image
           alt="تصویر پروفایل"
           width={48}
