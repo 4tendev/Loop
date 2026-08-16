@@ -37,7 +37,9 @@ type AvalonTableCardProps = {
     isRequestingPermission: boolean;
     connectedPeerCount: number;
     speakingUserIds: string[];
+    isPlaybackBlocked: boolean;
     error: string | null;
+    unlockAudio: () => Promise<void>;
     toggleMuted: () => Promise<void>;
   };
   selectedTeamSeatIds: string[];
@@ -556,6 +558,20 @@ export function AvalonTableCard({
         <span>{voiceChat.isMuted ? "میکروفن خاموش" : "میکروفن روشن"}</span>
       </button>,
     );
+
+    if (voiceChat.isPlaybackBlocked) {
+      actionButtons.push(
+        <button
+          className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-info px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-info-content shadow-lg shadow-info/25 sm:px-2 sm:py-1 sm:text-[0.65rem]"
+          key="unlock-audio"
+          onClick={() => void voiceChat.unlockAudio()}
+          type="button"
+        >
+          <span aria-hidden="true" className="text-sm leading-none">🔊</span>
+          <span>فعال‌کردن صدای بازی</span>
+        </button>,
+      );
+    }
   }
 
   if (

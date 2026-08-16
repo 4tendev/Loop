@@ -57,6 +57,7 @@ export function useAvalonVoiceChat({
   const [error, setError] = useState<string | null>(null);
   const [connectedPeerCount, setConnectedPeerCount] = useState(0);
   const [speakingUserIds, setSpeakingUserIds] = useState<string[]>([]);
+  const [isPlaybackBlocked, setIsPlaybackBlocked] = useState(false);
   const [iceConfiguration, setIceConfiguration] = useState<{
     gameId: string;
     servers: RTCIceServer[];
@@ -212,6 +213,7 @@ export function useAvalonVoiceChat({
       if (peer.remoteAudio) {
         peer.remoteAudio.pause();
         peer.remoteAudio.srcObject = null;
+        peer.remoteAudio.remove();
       }
       stopSpeakingMonitor(peerId);
       peersRef.current.delete(peerId);
@@ -263,12 +265,17 @@ export function useAvalonVoiceChat({
         const audio = peer.remoteAudio ?? new Audio();
         audio.autoplay = true;
         audio.setAttribute("playsinline", "");
+        audio.hidden = true;
+        audio.muted = false;
+        audio.volume = 1;
         audio.srcObject = stream;
         peer.remoteAudio = audio;
+        if (!audio.isConnected) document.body.appendChild(audio);
         startSpeakingMonitor(peerId, stream);
-        void audio.play().catch(() => {
-          // The next microphone-button click also retries remote playback.
-        });
+        void audio.play().then(
+          () => {},
+          () => setIsPlaybackBlocked(true),
+        );
       };
       connection.onconnectionstatechange = () => {
         updateConnectedPeerCount();
@@ -325,6 +332,7 @@ export function useAvalonVoiceChat({
       }
       setIsMuted(true);
       setError(null);
+      setIsPlaybackBlocked(false);
     }
     activeGameIdRef.current = nextGameId;
 
@@ -421,6 +429,7 @@ export function useAvalonVoiceChat({
       for (const peer of peersRef.current.values()) {
         peer.connection.close();
         peer.remoteAudio?.pause();
+        peer.remoteAudio?.remove();
       }
       peersRef.current.clear();
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -440,12 +449,30 @@ export function useAvalonVoiceChat({
     [],
   );
 
+  const unlockAudio = useCallback(async () => {
+    try {
+      if (audioContextRef.current?.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+
+      const results = await Promise.allSettled(
+        Array.from(peersRef.current.values()).map((peer) =>
+          peer.remoteAudio?.play(),
+        ),
+      );
+      const playbackFailed = results.some(
+        (result) => result.status === "rejected",
+      );
+      setIsPlaybackBlocked(playbackFailed);
+    } catch {
+      setIsPlaybackBlocked(true);
+    }
+  }, []);
+
   const toggleMuted = useCallback(async () => {
     if (!enabled || isRequestingPermission) return;
 
-    for (const peer of peersRef.current.values()) {
-      void peer.remoteAudio?.play().catch(() => {});
-    }
+    await unlockAudio();
 
     if (!isMuted) {
       localStreamRef.current
@@ -498,6 +525,7 @@ export function useAvalonVoiceChat({
     isMuted,
     isRequestingPermission,
     startSpeakingMonitor,
+    unlockAudio,
   ]);
 
   return {
@@ -510,7 +538,9 @@ export function useAvalonVoiceChat({
     isRequestingPermission,
     connectedPeerCount,
     speakingUserIds,
+    isPlaybackBlocked,
     error,
+    unlockAudio,
     toggleMuted,
   };
 }
