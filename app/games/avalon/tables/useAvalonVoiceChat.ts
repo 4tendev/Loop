@@ -475,10 +475,28 @@ export function useAvalonVoiceChat({
     await unlockAudio();
 
     if (!isMuted) {
-      localStreamRef.current
-        ?.getAudioTracks()
-        .forEach((track) => (track.enabled = false));
       setIsMuted(true);
+      setIsRequestingPermission(true);
+      const stream = localStreamRef.current;
+      localStreamRef.current = null;
+      const tracks = stream?.getAudioTracks() ?? [];
+      tracks.forEach((track) => (track.enabled = false));
+      if (currentUserId) stopSpeakingMonitor(currentUserId);
+
+      try {
+        await Promise.allSettled(
+          Array.from(peersRef.current.values()).map(async (peer) => {
+            const sender = peer.connection
+              .getSenders()
+              .find((candidate) => candidate.track?.kind === "audio") ??
+              peer.connection.getTransceivers()[0]?.sender;
+            if (sender) await sender.replaceTrack(null);
+          }),
+        );
+      } finally {
+        tracks.forEach((track) => track.stop());
+        setIsRequestingPermission(false);
+      }
       return;
     }
 
@@ -525,6 +543,7 @@ export function useAvalonVoiceChat({
     isMuted,
     isRequestingPermission,
     startSpeakingMonitor,
+    stopSpeakingMonitor,
     unlockAudio,
   ]);
 
