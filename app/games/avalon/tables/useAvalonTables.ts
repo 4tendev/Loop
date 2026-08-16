@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getAvalonWsUrl } from "./avalonTableUtils";
 import type {
@@ -7,6 +7,7 @@ import type {
   AvalonWsSeat,
   AvalonTableSnapshot,
   AvalonWsUser,
+  AvalonVoiceSignal,
   ConnectionStatus,
 } from "./types";
 
@@ -98,6 +99,45 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
     typeof setTimeout
   > | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceSignalListenersRef = useRef(
+    new Set<(fromUserId: string, signal: AvalonVoiceSignal) => void>(),
+  );
+
+  const subscribeToVoiceSignals = useCallback(
+    (listener: (fromUserId: string, signal: AvalonVoiceSignal) => void) => {
+      voiceSignalListenersRef.current.add(listener);
+      return () => {
+        voiceSignalListenersRef.current.delete(listener);
+      };
+    },
+    [],
+  );
+
+  const sendVoiceSignal = useCallback(
+    (gameId: string, targetUserId: string, signal: AvalonVoiceSignal) => {
+      const socket = socketRef.current;
+
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        return false;
+      }
+
+      socket.send(
+        JSON.stringify({
+          type: "avalon.voice.signal",
+          data: { gameId, targetUserId, signal },
+        }),
+      );
+      return true;
+    },
+    [],
+  );
+  const voiceTransport = useMemo(
+    () => ({
+      sendSignal: sendVoiceSignal,
+      subscribe: subscribeToVoiceSignals,
+    }),
+    [sendVoiceSignal, subscribeToVoiceSignals],
+  );
 
   useEffect(() => {
     if (!error && !notice) {
@@ -326,6 +366,13 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
 
         try {
           const message = JSON.parse(event.data) as AvalonWsMessage;
+
+          if (message.type === "avalon.voice.signal") {
+            for (const listener of voiceSignalListenersRef.current) {
+              listener(message.data.fromUserId, message.data.signal);
+            }
+            return;
+          }
 
           if (message.type === "hello") {
             setWsUser(message.data.user ?? null);
@@ -1006,6 +1053,7 @@ export function useAvalonTables(tableId?: string, adminMode = false) {
     pendingLadyTargetId,
     pendingAssassinActionId,
     wsUrl,
+    voiceTransport,
     actions: {
       cancelGame,
       startGame,

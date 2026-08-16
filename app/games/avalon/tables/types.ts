@@ -129,6 +129,12 @@ export type AvalonTableSnapshot = {
   tableInfo: AvalonWsGame | null;
   privateMessage: string | null;
   actionRequired: AvalonSeatActionRequired | null;
+  voiceParticipantIds: string[];
+};
+
+export type AvalonVoiceSignal = {
+  description?: RTCSessionDescriptionInit;
+  candidate?: RTCIceCandidateInit;
 };
 
 export type AvalonWsMessage =
@@ -157,6 +163,14 @@ export type AvalonWsMessage =
   | {
       type: "pong";
       data: null;
+      sentAt: string;
+    }
+  | {
+      type: "avalon.voice.signal";
+      data: {
+        fromUserId: string;
+        signal: AvalonVoiceSignal;
+      };
       sentAt: string;
     }
   | {

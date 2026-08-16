@@ -7,6 +7,7 @@ import { useUser } from "@/app/providers/UserProvider";
 import { AvalonTableCard } from "./AvalonTableCard";
 import { AvalonTablesHeader } from "./AvalonTablesHeader";
 import { useAvalonTables } from "./useAvalonTables";
+import { useAvalonVoiceChat } from "./useAvalonVoiceChat";
 
 type AvalonTablesClientProps = {
   tableId?: string;
@@ -41,10 +42,24 @@ export default function AvalonTablesClient({
     pendingMissionVoteId,
     pendingLadyTargetId,
     pendingAssassinActionId,
+    voiceTransport,
     actions,
   } = useAvalonTables(tableId, adminMode);
   const isAdmin = user?.type === "admin";
   const currentUserId = wsUser?.id ?? user?.id ?? null;
+  const voiceChat = useAvalonVoiceChat({
+    game:
+      isTableSnapshotLoaded && tableSnapshot?.tableInfo
+        ? tableSnapshot.tableInfo
+        : null,
+    participantIds:
+      isTableSnapshotLoaded && tableSnapshot
+        ? (tableSnapshot.voiceParticipantIds ?? [])
+        : [],
+    currentUserId,
+    connectionStatus,
+    transport: voiceTransport,
+  });
   const tableGameStatus = tableSnapshot?.tableInfo?.status ?? null;
   const isTerminalTableGame =
     tableGameStatus === "completed" || tableGameStatus === "cancelled";
@@ -237,6 +252,7 @@ export default function AvalonTablesClient({
                     tableId={tableId}
                     userId={user?.id ?? null}
                     wsUserId={wsUser?.id ?? null}
+                    voiceChat={voiceChat}
                   />
                 ))}
               </div>

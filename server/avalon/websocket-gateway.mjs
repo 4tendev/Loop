@@ -189,6 +189,7 @@ export function createAvalonWebSocketGateway({
     game,
     { force = false, snapshotVersion },
   ) {
+    socket.currentGame = game;
     const snapshot = createTableSnapshot(game, socket.user);
     const tableJson = JSON.stringify(snapshot);
 
@@ -204,6 +205,25 @@ export function createAvalonWebSocketGateway({
   }
 
   function createTableSnapshot(game, user) {
+    const seatedPlayerIds = new Set(
+      game?.seats.map((seat) => seat.player?.id).filter(Boolean) ?? [],
+    );
+    const voiceParticipantIds =
+      game?.status === "inProgress"
+        ? Array.from(
+            new Set(
+              Array.from(clients)
+                .filter(
+                  (client) =>
+                    client.gameId === game.id &&
+                    client.user?.id &&
+                    seatedPlayerIds.has(client.user.id),
+                )
+                .map((client) => client.user.id),
+            ),
+          )
+        : [];
+
     return {
       gameId: game?.id ?? null,
       tableInfo: game
@@ -211,6 +231,7 @@ export function createAvalonWebSocketGateway({
         : null,
       privateMessage: getPrivateMessage(game, user),
       actionRequired: getActionRequired(game, user),
+      voiceParticipantIds,
     };
   }
 
@@ -399,6 +420,10 @@ export function createAvalonWebSocketGateway({
         });
       }
 
+      if (message?.type === "avalon.voice.signal") {
+        forwardVoiceSignal(socket, message.data);
+      }
+
       if (message?.type === "avalon.cancelGame") {
         runAction(socket, {
           action: () =>
@@ -561,6 +586,72 @@ export function createAvalonWebSocketGateway({
       console.error("Failed to handle websocket message", error);
       send(socket, createMessage("error", { message: "Invalid JSON message" }));
     }
+  }
+
+  function forwardVoiceSignal(socket, data) {
+    const game = socket.currentGame;
+    const senderId = socket.user?.id;
+    const targetUserId = data?.targetUserId;
+    const signal = data?.signal;
+    const senderIsSeated = game?.seats.some(
+      (seat) => seat.player?.id === senderId,
+    );
+    const targetIsSeated = game?.seats.some(
+      (seat) => seat.player?.id === targetUserId,
+    );
+
+    if (
+      !senderId ||
+      !targetUserId ||
+      !game ||
+      senderId === targetUserId ||
+      socket.gameId !== game?.id ||
+      game.status !== "inProgress" ||
+      !senderIsSeated ||
+      !targetIsSeated ||
+      !isValidVoiceSignal(signal)
+    ) {
+      return;
+    }
+
+    for (const client of clients) {
+      if (
+        client.gameId === game.id &&
+        client.user?.id === targetUserId
+      ) {
+        send(
+          client,
+          createMessage("avalon.voice.signal", {
+            fromUserId: senderId,
+            signal,
+          }),
+        );
+      }
+    }
+  }
+
+  function isValidVoiceSignal(signal) {
+    if (!signal || typeof signal !== "object") {
+      return false;
+    }
+
+    if (signal.description) {
+      return (
+        (signal.description.type === "offer" ||
+          signal.description.type === "answer") &&
+        typeof signal.description.sdp === "string" &&
+        signal.description.sdp.length <= 100_000
+      );
+    }
+
+    if (signal.candidate) {
+      return (
+        typeof signal.candidate.candidate === "string" &&
+        signal.candidate.candidate.length <= 10_000
+      );
+    }
+
+    return false;
   }
 
   function runAction(socket, { action, errorMessage, logMessage, resultType }) {

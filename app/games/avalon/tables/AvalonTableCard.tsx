@@ -30,6 +30,15 @@ type AvalonTableCardProps = {
   pendingAssassinActionId: string | null;
   actionRequired: AvalonSeatActionRequired | null;
   privateMessage?: string | null;
+  voiceChat: {
+    enabled: boolean;
+    isSupported: boolean;
+    isMuted: boolean;
+    isRequestingPermission: boolean;
+    connectedPeerCount: number;
+    error: string | null;
+    toggleMuted: () => Promise<void>;
+  };
   selectedTeamSeatIds: string[];
   selectedLadyTargetSeatId: string | null;
   selectedAssassinTargetSeatId: string | null;
@@ -95,6 +104,7 @@ export function AvalonTableCard({
   pendingAssassinActionId,
   actionRequired,
   privateMessage,
+  voiceChat,
   selectedTeamSeatIds,
   selectedLadyTargetSeatId,
   selectedAssassinTargetSeatId,
@@ -508,6 +518,43 @@ export function AvalonTableCard({
   const rematchMinutesRemaining = Math.ceil(
     rematchMillisecondsRemaining / (60 * 1000),
   );
+
+  if (isTableView && game.status === "inProgress" && ownSeat) {
+    actionButtons.push(
+      <button
+        aria-pressed={!voiceChat.isMuted}
+        className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-md px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem] ${
+          voiceChat.isMuted
+            ? "border border-base-content/25 bg-base-100 text-base-content"
+            : "bg-success text-success-content shadow-lg shadow-success/25"
+        }`}
+        disabled={
+          !voiceChat.enabled ||
+          !voiceChat.isSupported ||
+          voiceChat.isRequestingPermission ||
+          connectionStatus !== "connected"
+        }
+        key="voice"
+        onClick={() => void voiceChat.toggleMuted()}
+        title={
+          !voiceChat.isSupported
+            ? "مرورگر شما از گفت‌وگوی صوتی پشتیبانی نمی‌کند"
+            : voiceChat.error ??
+              `${voiceChat.connectedPeerCount} بازیکن متصل به صدا`
+        }
+        type="button"
+      >
+        {voiceChat.isRequestingPermission ? (
+          <span className="loading loading-spinner loading-xs" />
+        ) : (
+          <span className="text-sm leading-none" aria-hidden="true">
+            {voiceChat.isMuted ? "🔇" : "🎙️"}
+          </span>
+        )}
+        <span>{voiceChat.isMuted ? "میکروفن خاموش" : "میکروفن روشن"}</span>
+      </button>,
+    );
+  }
 
   if (
     isTableView &&
@@ -1099,6 +1146,11 @@ export function AvalonTableCard({
                 </div>
               )}
             </div>
+            {voiceChat.enabled && voiceChat.error ? (
+              <p className="mt-1 text-center text-[0.65rem] text-error" role="alert">
+                {voiceChat.error}
+              </p>
+            ) : null}
           </div>
         </>
       ) : null}
