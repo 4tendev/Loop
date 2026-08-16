@@ -42,7 +42,6 @@ export default function AvalonTablesClient({
     pendingMissionVoteId,
     pendingLadyTargetId,
     pendingAssassinActionId,
-    voiceTransport,
     actions,
   } = useAvalonTables(tableId, adminMode);
   const isAdmin = user?.type === "admin";
@@ -52,13 +51,7 @@ export default function AvalonTablesClient({
       isTableSnapshotLoaded && tableSnapshot?.tableInfo
         ? tableSnapshot.tableInfo
         : null,
-    participantIds:
-      isTableSnapshotLoaded && tableSnapshot
-        ? (tableSnapshot.voiceParticipantIds ?? [])
-        : [],
     currentUserId,
-    connectionStatus,
-    transport: voiceTransport,
   });
   const tableGameStatus = tableSnapshot?.tableInfo?.status ?? null;
   const isTerminalTableGame =

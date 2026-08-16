@@ -11,5 +11,4 @@ export const avalonTableActionTypes = [
   "avalon.missionVote",
   "avalon.ladyTarget",
   "avalon.assassinAction",
-  "avalon.voice.signal",
 ];
