@@ -9,6 +9,7 @@ FROM deps AS web-builder
 
 COPY app ./app
 COPY lib ./lib
+COPY server/avalon/livekit.mjs ./server/avalon/livekit.mjs
 COPY public ./public
 COPY types ./types
 COPY next-env.d.ts ./
