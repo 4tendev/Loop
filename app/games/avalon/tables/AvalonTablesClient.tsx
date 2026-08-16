@@ -155,7 +155,7 @@ export default function AvalonTablesClient({
                 className={
                   isTableView
                     ? "flex h-full items-center justify-center bg-base-200 text-base-content"
-                    : "flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200"
+                    : "loop-subtle-panel flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200"
                 }
               >
                 <span className="loading loading-spinner loading-md" />
@@ -167,7 +167,7 @@ export default function AvalonTablesClient({
                 className={
                   isTableView
                     ? "flex h-full items-center justify-center bg-base-200 px-4 text-center text-sm text-base-content/70"
-                    : "flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200 px-4 text-center text-sm text-base-content/60"
+                    : "loop-subtle-panel flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200 px-4 text-center text-sm text-base-content/60"
                 }
               >
                 {tableId

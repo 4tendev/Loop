@@ -234,7 +234,7 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="flex items-center gap-4 rounded-box border border-base-300 bg-base-200/60 p-4">
+            <div className="loop-subtle-panel flex items-center gap-4 rounded-box border border-base-300 bg-base-200/60 p-4">
               <div className="relative">
                 <div className="avatar">
                   <div className="w-20 rounded-full">
@@ -285,7 +285,7 @@ export default function Dashboard() {
             </div>
 
             <Link
-              className="flex items-center justify-between gap-4 rounded-box border border-primary/25 bg-primary/5 p-4 transition hover:border-primary/50 hover:bg-primary/10"
+              className="loop-subtle-panel flex items-center justify-between gap-4 rounded-box border border-base-300 bg-base-200/60 p-4 transition"
               href="/user/tables"
             >
               <div>
