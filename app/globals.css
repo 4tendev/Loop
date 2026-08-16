@@ -93,10 +93,10 @@ body {
 }
 
 [data-theme="loop-light"] .loop-navbar {
-  background-color: color-mix(
-    in oklab,
-    var(--color-base-200) 72%,
-    var(--color-base-100)
+  background: linear-gradient(
+    105deg,
+    color-mix(in oklab, var(--color-primary) 7%, var(--color-base-100)),
+    color-mix(in oklab, var(--color-secondary) 5%, var(--color-base-100))
   );
   border-color: color-mix(
     in oklab,
