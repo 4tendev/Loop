@@ -1018,8 +1018,8 @@ export function AvalonTableCard({
                     {isLatestLadySideHidden
                       ? "••••"
                       : latestLadyReveal.targetSide === "good"
-                        ? "تیم خیر"
-                        : "تیم شر"}
+                        ? "تیم خیر (شهر)"
+                        : "تیم شر (مافیا)"}
                   </span>
                 </span>
               </button>

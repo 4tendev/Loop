@@ -155,8 +155,8 @@ export default function CreateAvalonPage() {
                 <div>
                   <h2 className="text-lg font-semibold">بازیکن‌ها</h2>
                   <p className="text-sm text-base-content/60">
-                    {rolePreview.sideCounts.good} خیر،{" "}
-                    {rolePreview.sideCounts.evil} شر
+                    {rolePreview.sideCounts.good} خیر (شهر)،{" "}
+                    {rolePreview.sideCounts.evil} شر (مافیا)
                   </p>
                 </div>
                 <div dir="ltr" className="join">
@@ -177,7 +177,7 @@ export default function CreateAvalonPage() {
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-base-300 bg-base-200 p-4">
-                  <p className="text-sm font-semibold text-success">خیر</p>
+                  <p className="text-sm font-semibold text-success">خیر (شهر)</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {rolePreview.good.map((role) => (
                       <span className="badge badge-success badge-outline" key={role}>
@@ -188,7 +188,7 @@ export default function CreateAvalonPage() {
                 </div>
 
                 <div className="rounded-lg border border-base-300 bg-base-200 p-4">
-                  <p className="text-sm font-semibold text-error">شر</p>
+                  <p className="text-sm font-semibold text-error">شر (مافیا)</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {rolePreview.evil.map((role) => (
                       <span className="badge badge-error badge-outline" key={role}>
@@ -246,9 +246,9 @@ export default function CreateAvalonPage() {
 
               <label className="flex items-center justify-between gap-4 rounded-lg border border-base-300 bg-base-200 p-4">
                 <span>
-                  <span className="block font-medium">شناخت نقش‌های شر</span>
+                  <span className="block font-medium">شناخت نقش‌های شر (مافیا)</span>
                   <span className="text-sm text-base-content/60">
-                    بازیکن‌های شر نقش دقیق همدیگر را ببینند
+                    بازیکن‌های شر (مافیا) نقش دقیق همدیگر را ببینند
                   </span>
                 </span>
                 <input
@@ -309,7 +309,7 @@ export default function CreateAvalonPage() {
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-base-content/60">شناخت نقش‌های شر</dt>
+                <dt className="text-base-content/60">شناخت نقش‌های شر (مافیا)</dt>
                 <dd className="font-medium">
                   {config.roleExposing ? "فعال" : "غیرفعال"}
                 </dd>

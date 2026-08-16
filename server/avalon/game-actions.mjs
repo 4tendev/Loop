@@ -106,7 +106,9 @@ function formatAvalonSeatList(
       const details = [];
 
       if (showSide) {
-        details.push(AVALON_EVIL_ROLES.has(seat.role) ? "شر" : "خیر");
+        details.push(
+          AVALON_EVIL_ROLES.has(seat.role) ? "شر (مافیا)" : "خیر (شهر)",
+        );
       }
 
       if (showRole) {
@@ -1898,15 +1900,15 @@ export async function chooseAvalonAssassinationTarget(
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "اساسین از تیم شر نمی تواند انتخاب کند.",
+        message: "اساسین از تیم شر (مافیا) نمی تواند انتخاب کند.",
       };
     }
 
     const winnerSide = assassination.targetRole === "merlin" ? "evil" : "good";
     const winMessage =
       winnerSide === "evil"
-        ? "بازی تمام شد. اساسین مرلین را پیدا کرد. شر برنده شد."
-        : "بازی تمام شد. اساسین مرلین را پیدا نکرد. خیر برنده شد.";
+        ? "بازی تمام شد. اساسین مرلین را پیدا کرد. شر (مافیا) برنده شد."
+        : "بازی تمام شد. اساسین مرلین را پیدا نکرد. خیر (شهر) برنده شد.";
 
     await client.query(
       `
@@ -2090,7 +2092,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
       await client.query("ROLLBACK");
       return {
         ok: false,
-        message: "بازیکنان تیم خیر نمی‌توانند رأی شکست برای ماموریت ثبت کنند",
+        message: "بازیکنان تیم خیر (شهر) نمی‌توانند رأی شکست برای ماموریت ثبت کنند",
       };
     }
 
@@ -2188,7 +2190,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
         await createAvalonPublicMessage(
           client,
           gameId,
-          "بازی تمام شد. شر برنده شد.",
+          "بازی تمام شد. شر (مافیا) برنده شد.",
         );
         await client.query(
           `
@@ -2219,7 +2221,7 @@ export async function voteAvalonMission(gameId, missionId, vote, userId) {
             SET
               action_required_type = NULL,
               action_required_id = NULL,
-              private_message = 'بازی تمام شد. شر برنده شد.'
+              private_message = 'بازی تمام شد. شر (مافیا) برنده شد.'
             WHERE game_id = $1
           `,
           [gameId],

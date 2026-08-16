@@ -72,8 +72,8 @@ function HistoryCard({ game }: { game: AvalonHistoryItem }) {
               {game.status === "cancelled"
                 ? "بدون نتیجه"
                 : game.winnerSide === "good"
-                  ? "پیروزی خوب‌ها"
-                  : "پیروزی شرورها"}
+                  ? "پیروزی خیر (شهر)"
+                  : "پیروزی شر (مافیا)"}
             </strong>
           </div>
           <div className="rounded-box bg-base-200 p-3">

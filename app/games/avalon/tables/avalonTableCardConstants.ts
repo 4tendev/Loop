@@ -1,8 +1,8 @@
 import type { AvalonWsPhase } from "./types";
 
 export const sideLabels = {
-  good: "خیر",
-  evil: "شر",
+  good: "خیر (شهر)",
+  evil: "شر (مافیا)",
 } as const;
 
 export const roleLabels = {
