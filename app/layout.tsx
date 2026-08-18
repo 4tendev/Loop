@@ -3,6 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 import Navbar from "./Navbar/Navbar";
 import { UserProvider } from "./providers/UserProvider";
+import { getSiteUrl } from "@/lib/site-url";
 
 const themeInitializer = `
   (function () {
@@ -23,8 +24,29 @@ const themeInitializer = `
   })();
 `;
 export const metadata: Metadata = {
-  title: "لوپ",
-  description: "برنامه لوپ",
+  metadataBase: getSiteUrl(),
+  title: {
+    default: "بازی آوالون آنلاین | لوپ",
+    template: "%s | لوپ",
+  },
+  description:
+    "بازی آوالون آنلاین به زبان فارسی؛ میز آوالون بسازید، با دوستانتان بازی کنید و نقش‌ها و مراحل بازی را آنلاین مدیریت کنید.",
+  applicationName: "لوپ",
+  keywords: [
+    "آوالون",
+    "بازی آوالون",
+    "بازی آوالون آنلاین",
+    "آوالون آنلاین",
+    "بازی گروهی آنلاین",
+    "بازی مافیا آوالون",
+  ],
+  authors: [{ name: "لوپ" }],
+  creator: "لوپ",
+  publisher: "لوپ",
+  category: "games",
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: "/loop-logo.png",
     apple: "/loop-logo.png",
@@ -49,7 +71,7 @@ export default function RootLayout({
             <Navbar />
           </header>
 
-          <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
+          <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
         </UserProvider>
       </body>
     </html>
