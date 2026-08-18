@@ -333,10 +333,10 @@ export default function Dashboard() {
                   </svg>
                 </button>
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 max-w-full">
                 {isEditingName ? (
                   <form
-                    className="flex max-w-sm items-center gap-2"
+                    className="flex w-64 max-w-full items-center gap-1.5"
                     onSubmit={updateName}
                   >
                     <input
@@ -372,7 +372,7 @@ export default function Dashboard() {
                     </button>
                   </form>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="inline-flex max-w-full items-center gap-1">
                     <p className="truncate text-base font-medium">{user.name}</p>
                     <button
                       aria-label="ویرایش نام"
@@ -403,7 +403,7 @@ export default function Dashboard() {
                     </button>
                   </div>
                 )}
-                <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="mt-1 inline-flex max-w-full flex-wrap items-center gap-1.5">
                   <p className="text-sm text-base-content/60">
                     {completedGameCount === null
                       ? "در حال دریافت تعداد بازی‌ها…"
