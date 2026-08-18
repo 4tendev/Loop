@@ -140,9 +140,6 @@ export type AvalonGame = {
   endedAt: Date | null;
   rematch?: {
     expiresAt: Date;
-    voteCount: number;
-    requiredCount: number;
-    acceptedByCurrentUser: boolean;
     gameId: string | null;
     gameStatus: AvalonGameStatus | null;
   } | null;

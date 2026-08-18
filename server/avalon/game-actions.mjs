@@ -2482,6 +2482,14 @@ export async function requestAvalonRematch(gameId, userId) {
       return { ok: false, message: "فقط بازی تمام‌شده را می‌توان دوباره برگزار کرد" };
     }
 
+    if (game.creatorId !== userId) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        message: "فقط سازنده بازی می‌تواند بازی مجدد را شروع کند",
+      };
+    }
+
     if (game.rematchGameId) {
       await client.query("COMMIT");
       return {
@@ -2508,34 +2516,6 @@ export async function requestAvalonRematch(gameId, userId) {
       [gameId],
     );
     const seats = seatsResult.rows;
-
-    if (!seats.some((seat) => seat.playerId === userId)) {
-      await client.query("ROLLBACK");
-      return { ok: false, message: "فقط بازیکنان این بازی می‌توانند به بازی مجدد رأی دهند" };
-    }
-
-    await client.query(
-      `
-        INSERT INTO avalon_rematch_votes (game_id, player_id)
-        VALUES ($1, $2)
-        ON CONFLICT (game_id, player_id) DO NOTHING
-      `,
-      [gameId, userId],
-    );
-    const voteCountResult = await client.query(
-      `SELECT count(*)::integer AS count FROM avalon_rematch_votes WHERE game_id = $1`,
-      [gameId],
-    );
-    const voteCount = voteCountResult.rows[0]?.count ?? 0;
-
-    if (voteCount < seats.length) {
-      await client.query("COMMIT");
-      return {
-        ok: true,
-        message: `بازی مجدد پذیرفته شد (${voteCount}/${seats.length})`,
-        gameId,
-      };
-    }
 
     const lastKingResult = await client.query(
       `
@@ -2607,7 +2587,7 @@ export async function requestAvalonRematch(gameId, userId) {
 
     return {
       ok: true,
-      message: "همه بازیکنان پذیرفتند. بازی مجدد شروع شد!",
+      message: "بازی مجدد شروع شد!",
       gameId,
       rematchGameId,
     };

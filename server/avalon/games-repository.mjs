@@ -24,14 +24,6 @@ export async function getActiveAvalonGames({
       game.initial_king_predecessor_seat_number AS "initialKingPredecessorSeatNumber",
       rematch_game.id AS "rematchGameId",
       rematch_game.status AS "rematchGameStatus",
-      COALESCE(
-        (
-          SELECT json_agg(rematch_vote.player_id)
-          FROM avalon_rematch_votes rematch_vote
-          WHERE rematch_vote.game_id = game.id
-        ),
-        '[]'::json
-      ) AS "rematchVoterIds",
       creator.id AS "creatorId",
       creator.name AS "creatorName",
       creator.profile_image AS "creatorProfileImage",
@@ -347,8 +339,6 @@ export async function getActiveAvalonGames({
     rematch: row.endedAt
       ? {
           expiresAt: new Date(new Date(row.endedAt).getTime() + 60 * 60 * 1000),
-          voterIds: row.rematchVoterIds,
-          requiredCount: row.seats.filter((seat) => seat.player !== null).length,
           gameId: row.rematchGameId,
           gameStatus: row.rematchGameStatus,
         }

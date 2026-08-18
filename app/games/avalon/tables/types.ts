@@ -39,9 +39,6 @@ export type AvalonWsGame = {
   endedAt: string | null;
   rematch: {
     expiresAt: string;
-    voteCount: number;
-    requiredCount: number;
-    acceptedByCurrentUser: boolean;
     gameId: string | null;
     gameStatus: AvalonGameStatus | null;
   } | null;

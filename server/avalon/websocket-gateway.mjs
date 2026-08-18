@@ -247,11 +247,6 @@ export function createAvalonWebSocketGateway({
       rematch: rematch
         ? {
             expiresAt: rematch.expiresAt,
-            voteCount: rematch.voterIds.length,
-            requiredCount: rematch.requiredCount,
-            acceptedByCurrentUser: Boolean(
-              user && rematch.voterIds.includes(user.id),
-            ),
             gameId: rematch.gameId,
             gameStatus: rematch.gameStatus,
           }

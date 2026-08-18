@@ -580,7 +580,7 @@ export function AvalonTableCard({
   if (
     isTableView &&
     game.status === "completed" &&
-    ownSeat &&
+    isCreator &&
     game.rematch &&
     !game.rematch.gameId
   ) {
@@ -588,7 +588,6 @@ export function AvalonTableCard({
       <button
         className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md bg-primary px-2 py-1 text-[0.65rem] font-bold leading-tight text-primary-content disabled:opacity-45"
         disabled={
-          game.rematch.acceptedByCurrentUser ||
           rematchMillisecondsRemaining <= 0 ||
           pendingRematchGameId === game.id ||
           connectionStatus !== "connected"
@@ -603,10 +602,7 @@ export function AvalonTableCard({
           <span className="text-sm leading-none">↻</span>
         )}
         <span>
-          {game.rematch.acceptedByCurrentUser
-            ? "بازی مجدد پذیرفته شد"
-            : "بازی مجدد"}
-          {` · ${game.rematch.voteCount}/${game.rematch.requiredCount} · ${rematchMinutesRemaining} دقیقه`}
+          {`بازی مجدد · ${rematchMinutesRemaining} دقیقه`}
         </span>
       </button>,
     );
