@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getSiteUrl } from "@/lib/site-url";
+import HomeFeaturedTable from "./HomeFeaturedTable";
 
 export const metadata: Metadata = {
   title: "بازی آوالون آنلاین فارسی",
@@ -126,16 +127,9 @@ export default function AvalonPage() {
             </ul>
           </div>
 
-          <div className="relative hidden min-h-96 lg:block" aria-hidden="true">
-            <div className="absolute inset-8 rounded-full bg-primary/15 blur-3xl" />
-            <Image
-              src="/avalon/King.png"
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 1024px) 420px, 0px"
-              className="object-contain drop-shadow-2xl"
-            />
+          <div className="relative min-h-96">
+            <div className="absolute inset-8 rounded-full bg-primary/15 blur-3xl" aria-hidden="true" />
+            <HomeFeaturedTable />
           </div>
         </div>
       </section>
