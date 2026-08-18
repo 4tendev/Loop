@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import AvalonPage from "./games/avalon/page";
 
 export const metadata: Metadata = {
-  title: "بازی آوالون آنلاین فارسی",
+  title: "بازی آوالون آنلاین فارسی | لوپ",
   description:
     "آوالون آنلاین را با دوستانتان بازی کنید؛ ساخت میز برای ۷ تا ۱۰ بازیکن، گفت‌وگوی صوتی، نقش‌های کامل و مدیریت خودکار مراحل بازی.",
   alternates: {
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/loop-logo.png",
-        width: 512,
-        height: 512,
+        width: 1254,
+        height: 1254,
         alt: "لوپ؛ بازی آوالون آنلاین",
       },
     ],

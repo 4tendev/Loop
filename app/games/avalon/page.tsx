@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { getSiteUrl } from "@/lib/site-url";
+
 export const metadata: Metadata = {
   title: "بازی آوالون آنلاین فارسی",
   description:
@@ -64,7 +66,7 @@ export default function AvalonPage() {
         operatingSystem: "Web",
         inLanguage: "fa-IR",
         description: "نسخه آنلاین فارسی بازی گروهی آوالون برای ۷ تا ۱۰ بازیکن.",
-        url: "/",
+        url: getSiteUrl().toString(),
       },
       {
         "@type": "FAQPage",
