@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import { useUser } from "@/app/providers/UserProvider";
 import {
   AvalonGameConfig,
   avalonMissionRulesByPlayerCount,
@@ -49,6 +50,7 @@ function getRolePreview(config: AvalonCreateConfig) {
 
 export default function CreateAvalonPage() {
   const router = useRouter();
+  const { isCheckingUser, user } = useUser();
   const [tableName, setTableName] = useState("");
   const [config, setConfig] = useState<AvalonCreateConfig>({
     playerCount: playerCounts[0],
@@ -63,6 +65,12 @@ export default function CreateAvalonPage() {
   const missionRules = avalonMissionRulesByPlayerCount[config.playerCount];
   const rolePreview = useMemo(() => getRolePreview(config), [config]);
   const canUseOberon = config.playerCount >= 8;
+
+  useEffect(() => {
+    if (!isCheckingUser && !user) {
+      router.replace("/auth");
+    }
+  }, [isCheckingUser, router, user]);
 
   function updateConfig(nextConfig: Partial<AvalonCreateConfig>) {
     setError(null);
@@ -108,6 +116,14 @@ export default function CreateAvalonPage() {
     } finally {
       setIsCreating(false);
     }
+  }
+
+  if (isCheckingUser || !user) {
+    return (
+      <main className="grid min-h-full place-items-center bg-base-200">
+        <span className="loading loading-spinner loading-lg text-primary" />
+      </main>
+    );
   }
 
   return (
