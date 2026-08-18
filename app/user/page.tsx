@@ -403,26 +403,21 @@ export default function Dashboard() {
                     </button>
                   </div>
                 )}
-                <p className="text-sm text-base-content/60">
-                  {completedGameCount === null
-                    ? "در حال دریافت تعداد بازی‌ها…"
-                    : `${completedGameCount.toLocaleString("fa-IR")} بازی کامل‌شده`}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-base-content/60">
+                    {completedGameCount === null
+                      ? "در حال دریافت تعداد بازی‌ها…"
+                      : `${completedGameCount.toLocaleString("fa-IR")} بازی کامل‌شده`}
+                  </p>
+                  <Link
+                    className="btn btn-primary btn-xs"
+                    href="/user/tables"
+                  >
+                    تاریخچه
+                  </Link>
+                </div>
               </div>
             </div>
-
-            <Link
-              className="loop-subtle-panel flex items-center justify-between gap-4 rounded-box border border-base-300 bg-base-200/60 p-4 transition"
-              href="/user/tables"
-            >
-              <div>
-                <h2 className="font-semibold">تاریخچه میزهای آوالون</h2>
-                <p className="text-sm text-base-content/60">
-                  نتیجه و خلاصه بازی‌های تمام‌شده یا لغوشده را ببینید.
-                </p>
-              </div>
-              <span className="btn btn-primary btn-sm shrink-0">مشاهده</span>
-            </Link>
 
             <div className="divider my-0" />
             <section className="space-y-4">

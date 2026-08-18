@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/providers/UserProvider";
@@ -170,11 +171,21 @@ export default function AvalonTablesClient({
                     : "loop-subtle-panel flex min-h-48 items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-200 px-4 text-center text-sm text-base-content/60"
                 }
               >
-                {tableId
-                  ? "این میز فعال نیست یا پیدا نشد."
-                  : adminMode
-                    ? "هنوز هیچ میز آوالونی ساخته نشده است."
-                    : "فعلا هیچ بازی فعال آوالونی وجود ندارد."}
+                {tableId ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <p>این میز فعال نیست یا پیدا نشد.</p>
+                    <Link
+                      className="btn btn-primary btn-sm"
+                      href="/games/avalon/tables"
+                    >
+                      بازگشت به میزها
+                    </Link>
+                  </div>
+                ) : adminMode ? (
+                  "هنوز هیچ میز آوالونی ساخته نشده است."
+                ) : (
+                  "فعلا هیچ بازی فعال آوالونی وجود ندارد."
+                )}
               </div>
             ) : null}
 
