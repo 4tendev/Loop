@@ -333,7 +333,7 @@ export default function Dashboard() {
                   </svg>
                 </button>
               </div>
-              <div className="min-w-0 max-w-full">
+              <div className="flex min-w-0 max-w-full flex-col items-start">
                 {isEditingName ? (
                   <form
                     className="flex w-64 max-w-full items-center gap-1.5"
