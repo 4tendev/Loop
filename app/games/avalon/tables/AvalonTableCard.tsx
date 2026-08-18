@@ -631,27 +631,6 @@ export function AvalonTableCard({
     );
   }
 
-  if (isTableView && canCancelGame && !isAdmin) {
-    actionButtons.push(
-      <button
-        className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-md border border-error/50 bg-error px-1.5 py-0.5 text-[0.6rem] font-bold leading-tight text-error-content disabled:opacity-45 sm:px-2 sm:py-1 sm:text-[0.65rem]"
-        disabled={
-          cancellingGameId === game.id || connectionStatus !== "connected"
-        }
-        key="cancel"
-        onClick={() => onCancelGame(game.id)}
-        type="button"
-      >
-        {cancellingGameId === game.id ? (
-          <span className="loading loading-spinner loading-xs" />
-        ) : (
-          <span className="text-sm leading-none">×</span>
-        )}
-        <span>لغو</span>
-      </button>,
-    );
-  }
-
   if (isTableView && game.status === "lobby" && ownSeat) {
     actionButtons.push(
       <button
@@ -884,7 +863,7 @@ export function AvalonTableCard({
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-2">
                   <strong className="min-w-0 truncate text-xs">{game.name}</strong>
-                  {isAdmin && canCancelGame ? (
+                  {canCancelGame ? (
                     <button
                       className="btn btn-error btn-xs shrink-0"
                       disabled={
