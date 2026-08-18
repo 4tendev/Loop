@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/providers/UserProvider";
+import type { ApiResponseBody } from "@/lib/api-response";
 import { getProfileImageSrc } from "@/lib/profile-image";
+import type { AvalonHistoryItem } from "@/types/avalon-history";
 import type { ApiUser } from "@/types/user";
 import type { AuthProvider } from "@/types/user";
 
@@ -17,17 +20,6 @@ type UpdateUserResponse = {
   message: string;
   data: ApiUser | null;
 };
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatUserType(type: ApiUser["type"]) {
-  return type === "admin" ? "مدیر" : "عضو";
-}
 
 async function preprocessProfileImage(file: File) {
   const objectUrl = URL.createObjectURL(file);
@@ -84,13 +76,19 @@ async function preprocessProfileImage(file: File) {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const { isCheckingUser, setUser, user } = useUser();
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [authMethods, setAuthMethods] = useState<ApiAuthMethod[]>([]);
+  const [completedGameCount, setCompletedGameCount] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     setName(user?.name ?? "");
@@ -102,6 +100,35 @@ export default function Dashboard() {
       .then((response) => response.json())
       .then((result: { data: ApiAuthMethod[] | null }) => setAuthMethods(result.data ?? []))
       .catch(() => setError("دریافت روش‌های ورود انجام نشد."));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setCompletedGameCount(null);
+      return;
+    }
+
+    let isActive = true;
+
+    void fetch("/api/games/avalon/history", {
+      cache: "no-store",
+      credentials: "same-origin",
+    })
+      .then((response) => response.json())
+      .then((result: ApiResponseBody<AvalonHistoryItem[] | null>) => {
+        if (!isActive) return;
+        setCompletedGameCount(
+          (result.data ?? []).filter((game) => game.status === "completed")
+            .length,
+        );
+      })
+      .catch(() => {
+        if (isActive) setCompletedGameCount(0);
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [user]);
 
   const trimmedName = name.trim();
@@ -137,6 +164,7 @@ export default function Dashboard() {
 
       setUser(result.data);
       setName(result.data.name);
+      setIsEditingName(false);
       setSuccess("نام به‌روزرسانی شد.");
     } catch {
       setError("به‌روزرسانی نام انجام نشد. دوباره تلاش کنید.");
@@ -182,6 +210,35 @@ export default function Dashboard() {
 
   function openProfileImagePicker() {
     profileImageInputRef.current?.click();
+  }
+
+  async function logOut() {
+    if (isLoggingOut || isSaving) return;
+
+    setError(null);
+    setSuccess(null);
+    setIsLoggingOut(true);
+
+    try {
+      const response = await fetch("/api/user", {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const result = (await response.json()) as UpdateUserResponse;
+
+      if (!response.ok) {
+        setError(result.message || "خروج از حساب انجام نشد.");
+        return;
+      }
+
+      setUser(null);
+      router.replace("/");
+      router.refresh();
+    } catch {
+      setError("خروج از حساب انجام نشد. دوباره تلاش کنید.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   }
 
   if (isCheckingUser) {
@@ -276,10 +333,80 @@ export default function Dashboard() {
                   </svg>
                 </button>
               </div>
-              <div>
-                <p className="text-base font-medium">{user.name}</p>
+              <div className="min-w-0 flex-1">
+                {isEditingName ? (
+                  <form
+                    className="flex max-w-sm items-center gap-2"
+                    onSubmit={updateName}
+                  >
+                    <input
+                      aria-label="نام نمایشی"
+                      autoFocus
+                      className="input input-sm input-bordered min-w-0 flex-1"
+                      disabled={isSaving}
+                      maxLength={60}
+                      onChange={(event) => {
+                        setName(event.target.value);
+                        setError(null);
+                        setSuccess(null);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                          setName(user.name);
+                          setIsEditingName(false);
+                        }
+                      }}
+                      value={name}
+                    />
+                    <button
+                      aria-label="ذخیره نام"
+                      className="btn btn-primary btn-square btn-sm"
+                      disabled={!canSaveName}
+                      type="submit"
+                    >
+                      {isSaving ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : (
+                        <span aria-hidden="true">✓</span>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-base font-medium">{user.name}</p>
+                    <button
+                      aria-label="ویرایش نام"
+                      className="btn btn-circle btn-ghost btn-xs shrink-0"
+                      disabled={isSaving}
+                      onClick={() => {
+                        setName(user.name);
+                        setError(null);
+                        setSuccess(null);
+                        setIsEditingName(true);
+                      }}
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M16.862 4.487a2.25 2.25 0 013.182 3.182L8.62 19.093a4.5 4.5 0 01-1.897 1.13l-3.01.89.89-3.01a4.5 4.5 0 011.13-1.897L16.862 4.487z"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
                 <p className="text-sm text-base-content/60">
-                  {formatUserType(user.type)}
+                  {completedGameCount === null
+                    ? "در حال دریافت تعداد بازی‌ها…"
+                    : `${completedGameCount.toLocaleString("fa-IR")} بازی کامل‌شده`}
                 </p>
               </div>
             </div>
@@ -296,34 +423,6 @@ export default function Dashboard() {
               </div>
               <span className="btn btn-primary btn-sm shrink-0">مشاهده</span>
             </Link>
-
-            <form className="flex flex-col gap-5" onSubmit={updateName}>
-              <label className="flex w-full flex-col gap-2">
-                <span className="label-text">نام</span>
-                <input
-                  className="input input-bordered w-full"
-                  disabled={isSaving}
-                  onChange={(event) => {
-                    setName(event.target.value);
-                    setError(null);
-                    setSuccess(null);
-                  }}
-                  placeholder="نام شما"
-                  type="text"
-                  value={name}
-                />
-              </label>
-
-              <button
-                className="btn btn-primary w-full"
-                disabled={!canSaveName}
-              >
-                {isSaving ? (
-                  <span className="loading loading-spinner loading-sm" />
-                ) : null}
-                ذخیره نام
-              </button>
-            </form>
 
             <div className="divider my-0" />
             <section className="space-y-4">
@@ -369,6 +468,19 @@ export default function Dashboard() {
 
             {error ? <p className="text-sm text-error">{error}</p> : null}
             {success ? <p className="text-sm text-success">{success}</p> : null}
+
+            <div className="divider my-0" />
+            <button
+              className="btn btn-error btn-outline w-full"
+              disabled={isLoggingOut || isSaving}
+              onClick={() => void logOut()}
+              type="button"
+            >
+              {isLoggingOut ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : null}
+              خروج از حساب
+            </button>
           </div>
         </div>
       </section>
