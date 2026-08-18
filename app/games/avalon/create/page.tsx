@@ -53,8 +53,8 @@ export default function CreateAvalonPage() {
   const [config, setConfig] = useState<AvalonCreateConfig>({
     playerCount: playerCounts[0],
     useOberon: false,
-    useLadyOfTheLake: false,
-    roleExposing: false,
+    useLadyOfTheLake: true,
+    roleExposing: true,
     useVoiceChat: true,
   });
   const [isCreating, setIsCreating] = useState(false);
