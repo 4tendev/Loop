@@ -55,6 +55,7 @@ export default function CreateAvalonPage() {
     useOberon: false,
     useLadyOfTheLake: false,
     roleExposing: false,
+    useVoiceChat: true,
   });
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -260,6 +261,23 @@ export default function CreateAvalonPage() {
                   type="checkbox"
                 />
               </label>
+
+              <label className="flex items-center justify-between gap-4 rounded-lg border border-base-300 bg-base-200 p-4">
+                <span>
+                  <span className="block font-medium">گفت‌وگوی صوتی</span>
+                  <span className="text-sm text-base-content/60">
+                    برای این بازی یک اتاق صوتی LiveKit ایجاد می‌کند
+                  </span>
+                </span>
+                <input
+                  checked={config.useVoiceChat}
+                  className="toggle toggle-primary"
+                  onChange={(event) =>
+                    updateConfig({ useVoiceChat: event.target.checked })
+                  }
+                  type="checkbox"
+                />
+              </label>
             </div>
           </div>
 
@@ -312,6 +330,12 @@ export default function CreateAvalonPage() {
                 <dt className="text-base-content/60">شناخت نقش‌های شر (مافیا)</dt>
                 <dd className="font-medium">
                   {config.roleExposing ? "فعال" : "غیرفعال"}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-base-content/60">گفت‌وگوی صوتی</dt>
+                <dd className="font-medium">
+                  {config.useVoiceChat ? "فعال" : "غیرفعال"}
                 </dd>
               </div>
             </dl>

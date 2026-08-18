@@ -2465,6 +2465,7 @@ export async function requestAvalonRematch(gameId, userId) {
           game.use_oberon AS "useOberon",
           game.use_lady_of_the_lake AS "useLadyOfTheLake",
           game.role_exposing AS "roleExposing",
+          game.use_voice_chat AS "useVoiceChat",
           game.ended_at AS "endedAt",
           rematch_game.id AS "rematchGameId"
         FROM avalon_games game
@@ -2541,12 +2542,13 @@ export async function requestAvalonRematch(gameId, userId) {
           use_oberon,
           use_lady_of_the_lake,
           role_exposing,
+          use_voice_chat,
           public_message,
           started_at,
           rematch_of_game_id,
           initial_king_predecessor_seat_number
         )
-        VALUES ($1, $2, 'inProgress', $3, $4, $5, $6, $7, now(), $8, $9)
+        VALUES ($1, $2, 'inProgress', $3, $4, $5, $6, $7, $8, now(), $9, $10)
         RETURNING id
       `,
       [
@@ -2556,6 +2558,7 @@ export async function requestAvalonRematch(gameId, userId) {
         game.useOberon,
         game.useLadyOfTheLake,
         game.roleExposing,
+        game.useVoiceChat,
         "بازی شروع شد. بررسی شب خود را کامل کنید.",
         gameId,
         lastKingSeatNumber,
@@ -2582,7 +2585,9 @@ export async function requestAvalonRematch(gameId, userId) {
       ],
     );
     await createNightPhase(client, rematchGameId);
-    await createAvalonVoiceRoom(rematchGameId);
+    if (game.useVoiceChat) {
+      await createAvalonVoiceRoom(rematchGameId);
+    }
     await client.query("COMMIT");
 
     return {
@@ -2829,7 +2834,7 @@ export async function leaveAvalonSeat(gameId, userId) {
         AND seat.game_id = game.id
         AND game.status = 'lobby'
         AND game.status NOT IN ('completed', 'cancelled')
-      RETURNING seat.id
+      RETURNING seat.id, game.use_voice_chat AS "useVoiceChat"
     `,
     [gameId, userId],
   );
@@ -2841,10 +2846,12 @@ export async function leaveAvalonSeat(gameId, userId) {
     };
   }
 
-  try {
-    await removeAvalonVoiceParticipant(gameId, userId);
-  } catch (error) {
-    console.error("Failed to remove participant from Avalon voice room", error);
+  if (result.rows[0].useVoiceChat) {
+    try {
+      await removeAvalonVoiceParticipant(gameId, userId);
+    } catch (error) {
+      console.error("Failed to remove participant from Avalon voice room", error);
+    }
   }
 
   return {

@@ -17,6 +17,7 @@ export async function getActiveAvalonGames({
       game.use_oberon AS "useOberon",
       game.use_lady_of_the_lake AS "useLadyOfTheLake",
       game.role_exposing AS "roleExposing",
+      game.use_voice_chat AS "useVoiceChat",
       game.public_message AS "publicMessage",
       game.created_at AS "createdAt",
       game.started_at AS "startedAt",
@@ -323,6 +324,7 @@ export async function getActiveAvalonGames({
       useOberon: row.useOberon,
       useLadyOfTheLake: row.useLadyOfTheLake,
       roleExposing: row.roleExposing,
+      useVoiceChat: row.useVoiceChat,
     },
     publicMessage: row.publicMessage,
     creator: {

@@ -33,6 +33,7 @@ type AvalonGameRow = {
   useOberon: boolean;
   useLadyOfTheLake: boolean;
   roleExposing: boolean;
+  useVoiceChat: boolean;
   publicMessage: string;
   winnerSide: AvalonSide | null;
   createdAt: Date;
@@ -85,7 +86,8 @@ function parseAvalonGameConfig(value: unknown): AvalonGameConfig | string {
   if (
     typeof value.useOberon !== "boolean" ||
     typeof value.useLadyOfTheLake !== "boolean" ||
-    typeof value.roleExposing !== "boolean"
+    typeof value.roleExposing !== "boolean" ||
+    typeof value.useVoiceChat !== "boolean"
   ) {
     return "تنظیمات بازی نامعتبر است";
   }
@@ -99,6 +101,7 @@ function parseAvalonGameConfig(value: unknown): AvalonGameConfig | string {
     useOberon: value.useOberon,
     useLadyOfTheLake: value.useLadyOfTheLake,
     roleExposing: value.roleExposing,
+    useVoiceChat: value.useVoiceChat,
   };
 }
 
@@ -146,6 +149,7 @@ function mapGame(row: AvalonGameRow, seats: AvalonSeat[]): Omit<AvalonGame, "cre
       useOberon: row.useOberon,
       useLadyOfTheLake: row.useLadyOfTheLake,
       roleExposing: row.roleExposing,
+      useVoiceChat: row.useVoiceChat,
     },
     seats,
     publicMessage: row.publicMessage,
@@ -260,9 +264,10 @@ export async function POST(request: NextRequest) {
           use_oberon,
           use_lady_of_the_lake,
           role_exposing,
+          use_voice_chat,
           public_message
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING
           id,
           COALESCE(table_name, 'میز بدون نام') AS name,
@@ -271,6 +276,7 @@ export async function POST(request: NextRequest) {
           use_oberon AS "useOberon",
           use_lady_of_the_lake AS "useLadyOfTheLake",
           role_exposing AS "roleExposing",
+          use_voice_chat AS "useVoiceChat",
           public_message AS "publicMessage",
           winner_side AS "winnerSide",
           created_at AS "createdAt",
@@ -284,6 +290,7 @@ export async function POST(request: NextRequest) {
         config.useOberon,
         config.useLadyOfTheLake,
         config.roleExposing,
+        config.useVoiceChat,
         initialPublicMessage,
       ],
     );
@@ -305,7 +312,9 @@ export async function POST(request: NextRequest) {
       [game.id, roles, roles.map((_, index) => index + 1)],
     );
 
-    await createAvalonVoiceRoom(game.id);
+    if (config.useVoiceChat) {
+      await createAvalonVoiceRoom(game.id);
+    }
 
     await client.query("COMMIT");
 

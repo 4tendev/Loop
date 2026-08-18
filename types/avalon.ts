@@ -87,6 +87,7 @@ export type AvalonGameConfig = {
   useOberon: boolean;
   useLadyOfTheLake: boolean;
   roleExposing: boolean;
+  useVoiceChat: boolean;
 };
 
 export const avalonMissionRulesByPlayerCount = {

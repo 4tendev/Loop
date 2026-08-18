@@ -47,6 +47,7 @@ export function useAvalonVoiceChat({
   );
   const enabled = Boolean(
     isSupported &&
+      game?.config.useVoiceChat === true &&
       (game?.status === "lobby" ||
         game?.status === "inProgress" ||
         game?.status === "completed") &&
