@@ -85,6 +85,7 @@ import {
   sideLabels,
 } from "./avalonTableCardConstants";
 import { AvalonTableSeat } from "./AvalonTableSeat";
+import { AvalonPlayerProfileModal } from "./AvalonPlayerProfileModal";
 
 const lobbyJoinGuideStorageKey = "avalon:lobby-join-guide-understood:v1";
 
@@ -138,6 +139,9 @@ export function AvalonTableCard({
     : null;
   const [isLobbyJoinGuideOpen, setIsLobbyJoinGuideOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<
+    NonNullable<AvalonWsSeat["player"]> | null
+  >(null);
   const lobbyJoinGuideGameIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -487,6 +491,7 @@ export function AvalonTableCard({
     onToggleTeamSeat,
     onSelectLadyTarget,
     onSelectAssassinTarget,
+    onViewPlayerProfile: setSelectedPlayerProfile,
   };
 
   function renderSeat(
@@ -1768,6 +1773,13 @@ export function AvalonTableCard({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {isTableView && selectedPlayerProfile ? (
+        <AvalonPlayerProfileModal
+          onClose={() => setSelectedPlayerProfile(null)}
+          player={selectedPlayerProfile}
+        />
       ) : null}
     </article>
   );

@@ -35,6 +35,7 @@ type AvalonTableSeatProps = {
   onToggleTeamSeat: (questId: string, seatId: string, teamSlotCount: number) => void;
   onSelectLadyTarget: (ladyCheckId: string, seatId: string) => void;
   onSelectAssassinTarget: (assassinationId: string, seatId: string) => void;
+  onViewPlayerProfile: (player: NonNullable<AvalonWsSeat["player"]>) => void;
 };
 
 const connectorClasses: Record<SeatPosition, string> = {
@@ -122,6 +123,7 @@ export function AvalonTableSeat(props: AvalonTableSeatProps) {
     if (canToggleTeamSeat && props.nominationQuestId) return props.onToggleTeamSeat(props.nominationQuestId, seat.id, props.teamSlotCount);
     if (canSelectLadyTarget && props.ladyCheckId) return props.onSelectLadyTarget(props.ladyCheckId, seat.id);
     if (canSelectAssassinTarget && props.assassinationId) return props.onSelectAssassinTarget(props.assassinationId, seat.id);
+    if (seat.player) return props.onViewPlayerProfile(seat.player);
     if (!props.isTerminalGame) props.onSelectSeat(game, seat);
   }
 
