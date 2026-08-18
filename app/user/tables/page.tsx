@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useUser } from "@/app/providers/UserProvider";
 import type { ApiResponseBody } from "@/lib/api-response";
-import type { AvalonRoleName } from "@/types/avalon";
+import type { AvalonRoleName, AvalonSide } from "@/types/avalon";
 import type { AvalonHistoryItem } from "@/types/avalon-history";
 
 const roleLabels: Record<AvalonRoleName, string> = {
@@ -17,6 +17,61 @@ const roleLabels: Record<AvalonRoleName, string> = {
   mordred: "موردرد",
   oberon: "اوبرون",
 };
+
+const roleOrder = Object.keys(roleLabels) as AvalonRoleName[];
+const sideOrder: AvalonSide[] = ["good", "evil"];
+const sideLabels: Record<AvalonSide, string> = {
+  good: "خیر (شهر)",
+  evil: "شر (مافیا)",
+};
+
+type PerformanceStat = {
+  games: number;
+  wins: number;
+};
+
+function formatWinRate({ games, wins }: PerformanceStat) {
+  const rate = games === 0 ? 0 : Math.round((wins / games) * 1000) / 10;
+  return `${rate.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}٪`;
+}
+
+function PerformanceCard({
+  label,
+  stat,
+  tone,
+}: {
+  label: string;
+  stat: PerformanceStat;
+  tone: "good" | "evil" | "neutral";
+}) {
+  return (
+    <article
+      className={`rounded-box border p-4 ${
+        tone === "good"
+          ? "border-success/30 bg-success/10"
+          : tone === "evil"
+            ? "border-error/30 bg-error/10"
+            : "border-base-300 bg-base-100"
+      }`}
+    >
+      <h3 className="font-bold">{label}</h3>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div>
+          <span className="block text-[0.65rem] text-base-content/55">بازی</span>
+          <strong className="text-lg">{stat.games.toLocaleString("fa-IR")}</strong>
+        </div>
+        <div>
+          <span className="block text-[0.65rem] text-base-content/55">برد</span>
+          <strong className="text-lg">{stat.wins.toLocaleString("fa-IR")}</strong>
+        </div>
+        <div>
+          <span className="block text-[0.65rem] text-base-content/55">نرخ برد</span>
+          <strong className="text-lg">{formatWinRate(stat)}</strong>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("fa-IR", {
@@ -106,6 +161,37 @@ export default function AvalonTableHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const performance = useMemo(() => {
+    const sides = Object.fromEntries(
+      sideOrder.map((side) => [side, { games: 0, wins: 0 }]),
+    ) as Record<AvalonSide, PerformanceStat>;
+    const roles = Object.fromEntries(
+      roleOrder.map((role) => [role, { games: 0, wins: 0 }]),
+    ) as Record<AvalonRoleName, PerformanceStat>;
+
+    for (const game of history) {
+      if (
+        game.status !== "completed" ||
+        !game.userSide ||
+        !game.userRole ||
+        !game.winnerSide
+      ) {
+        continue;
+      }
+
+      const didWin = game.userSide === game.winnerSide;
+      sides[game.userSide].games += 1;
+      roles[game.userRole].games += 1;
+
+      if (didWin) {
+        sides[game.userSide].wins += 1;
+        roles[game.userRole].wins += 1;
+      }
+    }
+
+    return { roles, sides };
+  }, [history]);
+
   useEffect(() => {
     if (isCheckingUser) {
       return;
@@ -191,6 +277,49 @@ export default function AvalonTableHistoryPage() {
         ) : null}
 
         {error ? <div className="alert alert-error">{error}</div> : null}
+
+        {!isLoading && user && !error ? (
+          <>
+            <section className="space-y-3" aria-labelledby="side-stats-title">
+              <div>
+                <h2 className="text-lg font-bold" id="side-stats-title">
+                  آمار بر اساس جناح
+                </h2>
+                <p className="text-xs text-base-content/55">
+                  فقط بازی‌های کامل‌شده در آمار محاسبه می‌شوند.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {sideOrder.map((side) => (
+                  <PerformanceCard
+                    key={side}
+                    label={sideLabels[side]}
+                    stat={performance.sides[side]}
+                    tone={side}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-3" aria-labelledby="role-stats-title">
+              <h2 className="text-lg font-bold" id="role-stats-title">
+                آمار بر اساس نقش
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {roleOrder.map((role) => (
+                  <PerformanceCard
+                    key={role}
+                    label={roleLabels[role]}
+                    stat={performance.roles[role]}
+                    tone="neutral"
+                  />
+                ))}
+              </div>
+            </section>
+
+            <div className="divider my-1">میزها</div>
+          </>
+        ) : null}
 
         {!isLoading && user && !error && history.length === 0 ? (
           <div className="rounded-box border border-dashed border-base-300 bg-base-100 p-10 text-center">
