@@ -523,7 +523,7 @@ export function AvalonTableCard({
     rematchMillisecondsRemaining / (60 * 1000),
   );
 
-  if (isTableView && !isTerminalGame && ownSeat) {
+  if (isTableView && game.status !== "cancelled" && ownSeat) {
     actionButtons.push(
       <button
         aria-pressed={!voiceChat.isMuted}

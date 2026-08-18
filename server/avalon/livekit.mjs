@@ -24,6 +24,12 @@ export function createAvalonVoiceRoom(gameId) {
   });
 }
 
+export async function avalonVoiceRoomExists(gameId) {
+  const roomName = `avalon-${gameId}`;
+  const rooms = await getRoomService().listRooms([roomName]);
+  return rooms.some((room) => room.name === roomName);
+}
+
 export function removeAvalonVoiceParticipant(gameId, userId) {
   return getRoomService().removeParticipant(`avalon-${gameId}`, userId, {
     revokeTokenTs: BigInt(Math.floor(Date.now() / 1000) + 1),

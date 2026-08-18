@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-response";
 import { getUserSessionFromRequest } from "@/lib/auth/session";
 import { getPostgresPool } from "@/lib/postgres";
+import { avalonVoiceRoomExists } from "@/server/avalon/livekit.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,12 +34,12 @@ export async function POST(request: NextRequest) {
   try {
     const accessResult = await getPostgresPool().query(
       `
-        SELECT 1
+        SELECT game.status
         FROM avalon_games AS game
         INNER JOIN avalon_seats AS seat ON seat.game_id = game.id
         WHERE
           game.id = $1
-          AND game.status IN ('lobby', 'inProgress')
+          AND game.status IN ('lobby', 'inProgress', 'completed')
           AND seat.player_id = $2
         LIMIT 1
       `,
@@ -46,7 +47,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (accessResult.rowCount !== 1) {
-      return unauthorized("فقط بازیکنان بازی در حال اجرا به گفت‌وگوی صوتی دسترسی دارند");
+      return unauthorized("فقط بازیکنان این بازی به گفت‌وگوی صوتی دسترسی دارند");
+    }
+
+    if (
+      accessResult.rows[0].status === "completed" &&
+      !(await avalonVoiceRoomExists(body.gameId))
+    ) {
+      return apiResponse(410, "اتاق گفت‌وگوی صوتی این بازی بسته شده است", null, {
+        status: 410,
+      });
     }
 
     const serverUrl = process.env.LIVEKIT_URL?.trim();

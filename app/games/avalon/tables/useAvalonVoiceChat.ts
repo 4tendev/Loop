@@ -47,7 +47,9 @@ export function useAvalonVoiceChat({
   );
   const enabled = Boolean(
     isSupported &&
-      (game?.status === "lobby" || game?.status === "inProgress") &&
+      (game?.status === "lobby" ||
+        game?.status === "inProgress" ||
+        game?.status === "completed") &&
       currentUserId &&
       game.seats.some((seat) => seat.player?.id === currentUserId),
   );
