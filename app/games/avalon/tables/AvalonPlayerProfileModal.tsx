@@ -147,7 +147,7 @@ export function AvalonPlayerProfileModal({
               </div>
 
               <p className="text-center text-[0.65rem] leading-5 text-base-content/50">
-                نرخ برد از دید {player.name} و فقط بر اساس بازی‌های کامل محاسبه شده است.
+                نرخ برد از دید شما و فقط بر اساس بازی‌های کامل محاسبه شده است.
               </p>
             </div>
           ) : null}

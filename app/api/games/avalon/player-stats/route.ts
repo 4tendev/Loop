@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
           )::integer AS "sameSideWins",
           count(*) FILTER (WHERE "viewerSide" <> "playerSide")::integer AS "oppositeSideGames",
           count(*) FILTER (
-            WHERE "viewerSide" <> "playerSide" AND "winnerSide" = "playerSide"
+            WHERE "viewerSide" <> "playerSide" AND "winnerSide" = "viewerSide"
           )::integer AS "oppositeSideWins"
         FROM shared_games
       `,
